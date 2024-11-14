@@ -1,0 +1,25 @@
+cookie:
+  expiry_days: 30
+  key: some_key
+  name: some_cookie_name
+credentials:
+  usernames:
+    diegorm666:
+      email: mrcubeoner041@gmail.com
+      failed_login_attempts: 0
+      logged_in: false
+      name: Diego Ruiz
+      password: $2b$12$P5CqIiIXDhU0/Eg50mpDDe54ERNDxB98dACU2QcsxoNaMk9BTO1n2
+oauth2:
+  google:
+    client_id: null
+    client_secret: null
+    redirect_uri: null
+  microsoft:
+    client_id: null
+    client_secret: null
+    redirect_uri: null
+    tenant_id: null
+pre-authorized:
+  emails:
+  - melsby@gmail.com
