@@ -10,6 +10,8 @@ credentials:
       logged_in: false
       name: Diego Ruiz
       password: $2b$12$P5CqIiIXDhU0/Eg50mpDDe54ERNDxB98dACU2QcsxoNaMk9BTO1n2
+      roles:
+      - admin
 oauth2:
   google:
     client_id: null
@@ -22,4 +24,4 @@ oauth2:
     tenant_id: null
 pre-authorized:
   emails:
-  - melsby@gmail.com
+  - al2202000335@azc.uam.mx
