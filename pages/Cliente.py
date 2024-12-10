@@ -1,7 +1,12 @@
 import streamlit as st
 import pandas as pd
 import time
+from menu import menu_with_redirect
 
+#Mandamos a llamara a menu con redirección
+menu_with_redirect()
+
+st.markdown("# 🏢 Clientes")
 
 # Mostrar las disintas actividades a realizar
 tab_lst_client, tab_ins_client, tab_upd_client, tab_del_client = \

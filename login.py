@@ -9,6 +9,7 @@ Libraries imported:
 import yaml
 import streamlit as st
 from yaml.loader import SafeLoader
+import streamlit as st
 import streamlit_authenticator as stauth
 from streamlit_authenticator.utilities import (CredentialsError,
                                                ForgotError,
@@ -17,7 +18,7 @@ from streamlit_authenticator.utilities import (CredentialsError,
                                                RegisterError,
                                                ResetError,
                                                UpdateError)
-from menu import authenticated_menu
+from menu import menu
 
 # Loading config file
 with open('config.yaml', 'r', encoding='utf-8') as file:
@@ -40,36 +41,58 @@ authenticator = stauth.Authenticate(
 
 # Creating a login widget
 try:
-    authenticator.login()
+    authenticator.login(fields={'Form name':'Iniciar Sesión', 
+                                'Username':'Usuario',
+                                'Password':'Contraseña',
+                                'Login':'Iniciar Sesión'
+                                })
 except LoginError as e:
     st.error(e)
 
 
+def deploy_information():
+    tab_info_session, tab_update_session = st.tabs(["Información", "Actualizar"])
+
+    with tab_info_session:
+        st.markdown("### Información")
+        st.write(f"👤 Usuario:")
+        st.info(f"{st.session_state["name"]}")
+        st.write(f"📧 Correo:")
+        st.info(f"{st.session_state["email"]}")
+        st.write(f"📇 Roles: ")
+        roles_assigned = ""
+        for role in st.session_state["roles"]:
+            roles_assigned = roles_assigned+" "+role
+        st.info(f"{roles_assigned}")
+
+    with tab_update_session:
+        # Creating a password reset widget
+        if st.session_state['authentication_status']:
+            try:
+                if authenticator.reset_password(st.session_state['username'], fields={'Form name':'Cambiar Contraseña', 
+                                        'Current password':'Contraseña Actual',
+                                        'New password':'Nueva Contraseña',
+                                        'Repeat password':'Repite la Contraseña'}):
+                    save_file_yaml()
+                    st.success('Contraseña Actualiazada Correctamente')
+            except (CredentialsError, ResetError) as e:
+                st.error(e)
+
 # Authenticating user
 if st.session_state['authentication_status']:
-    st.write(f'Welcome *{st.session_state["name"]}*, Role: {st.session_state["roles"]}')
-    st.title('Some content')
-    authenticator.logout()
+    deploy_information()
+    authenticator.logout("Salir Sesion")
 elif st.session_state['authentication_status'] is False:
-    st.error('Username/password is incorrect')
+    st.error('Usuario/Contraseña Incorrecta')
 elif st.session_state['authentication_status'] is None:
-    st.warning('Please enter your username and password')
+    st.warning('Porfavor, ingresa tu Usuario y Contraseña')
 
-
-
-
-# Creating a password reset widget
-if st.session_state['authentication_status']:
-    try:
-        if authenticator.reset_password(st.session_state['username']):
-            st.success('Password modified successfully')
-    except (CredentialsError, ResetError) as e:
-        st.error(e)
-
+# We call the menu function to render the possibilities in the sidebar.
+menu()
 
 
 # Saving config file
-with open('config.yaml', 'w', encoding='utf-8') as file:
-    yaml.dump(config, file, default_flow_style=False)
+def save_file_yaml():
+    with open('config.yaml', 'w', encoding='utf-8') as file:
+        yaml.dump(config, file, default_flow_style=False)
 
-authenticated_menu()

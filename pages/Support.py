@@ -1,7 +1,15 @@
 import streamlit as st
 import pandas as pd
 import time
+from menu import menu_with_redirect
 
+
+
+# Primero hacemos las comprobacion
+menu_with_redirect()
+
+#Creamos un titulo
+st.markdown("# ")
 
 # Mostrar las disintas actividades a realizar
 tab_lst_support, tab_ins_support, tab_upd_support, tab_del_support = \
