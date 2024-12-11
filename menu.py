@@ -7,7 +7,8 @@ def authenticated_menu():
     
     # Check if the user's role is in the list of roles
     if any(role in ["admin", "super-admin"] for role in st.session_state["roles"]):
-        st.sidebar.page_link("pages/Cliente.py", label="Cliente")
+        st.sidebar.page_link("pages/main_client.py", label="Clientes")
+        st.sidebar.page_link("pages/Sessions.py", label="Miembros")
 
 
 def unauthenticated_menu():
