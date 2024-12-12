@@ -40,7 +40,8 @@ with tab_lst_client:
                     st.markdown(f"☎️ {cliente['telefono']}")
                     st.markdown(f"📧 {cliente['email']}")
                     st.markdown(f"🔤 {cliente['direccion']}")
-                    st.markdown(f"🗒️ {cliente['notas']}")
+                    if cliente['notas'] != "":
+                        st.markdown(f"🗒️ {cliente['notas']}")
             
             # Actualizar el índice para alternar entre las columnas
             index += 1
@@ -69,7 +70,7 @@ with tab_ins_client:
             st.error("Cliente no agregado")
             st.info("Llene todos los campos obligatorios")
         else:
-            if not bd.consultar_nombre_insensible(name_ins_client):
+            if not bd.consultar_nombre_insensible(name_ins_client, "cliente"):
                 query = f"INSERT INTO cliente (nombre, telefono, email, direccion, notas) VALUES ('{name_ins_client}', '{phone_ins_client}', '{email_ins_client}', '{address_ins_client}', '{comments_ins_client}');"
                 bd.insertar(query)
                 st.success("Cliente Agregado")
@@ -120,6 +121,7 @@ with tab_upd_client:
             time.sleep(3)
             message_container.empty()
             st.rerun()
+            
 with tab_del_client:
     if clients_avaliable is not None:
         combined_clients = [f"#{row['idCliente']} - {row['nombre']}" for index, row in clients_avaliable.iterrows()]

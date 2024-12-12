@@ -100,11 +100,11 @@ def insertar(query):
         # Cierra la conexión si fue establecida
         cerrarConexion(connection)
 
-def consultar_nombre_insensible(nombre):
+def consultar_nombre_insensible(nombre, base_datos):
     """Consulta si hay un nombre igual en la base de datos, insensible a mayúsculas y minúsculas."""
     # Asegurarse de que el nombre esté en minúsculas para la comparación
     query = f"""
-    SELECT * FROM erp.cliente
+    SELECT * FROM erp.{base_datos}
     WHERE nombre COLLATE utf8_general_ci = '{nombre}';
     """
     
