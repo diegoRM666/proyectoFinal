@@ -3,7 +3,7 @@ import pandas as pd
 import time
 from menu import menu_with_redirect
 import logic.bd as bd
-
+from datetime import datetime
 
 
 # Primero hacemos las comprobacion
@@ -37,22 +37,22 @@ with tab_lst_bill:
             with col:
                 with st.container(border=True):
                     st.markdown(f"## 💵 #{bill['idFactura']} - {bill['nombre']}")
-                    st.markdown(f"Fecha Emision: {bill['fecha_emision']}")
-                    st.markdown(f"🔠 Costo: {bill['costo']}")
-                    st.markdown(f"♟️ Tipo: {bill['tipo']}")
-                    st.markdown(f"#️⃣ Impuesto: {bill['impuesto']}")
-                    st.markdown(f"⏲️ Creado Por: {bill['creado_por']}")
-                    st.markdown(f"⏲️ Ultima Modificación: {bill['fecha_modificacion']}")
-                    st.markdown(f"⏲️ Modificado Por: {bill['modificado_por']}")
-                    st.write(f"Actividad: #{bill['idA']}-{bill['nombre_a']}")
-                    st.write(f"Miembro: #{bill['idM']}-{bill['nombre_m']}")
+                    st.markdown(f"📆 Fecha Emision: {bill['fecha_emision']}")
+                    st.markdown(f"🪙 Costo: {bill['costo']}")
+                    st.markdown(f"📖 Tipo: {bill['tipo']}")
+                    st.markdown(f"📈 Impuesto: {bill['impuesto']}")
+                    st.markdown(f"👤 Creado Por: {bill['creado_por']}")
+                    st.markdown(f"📅 Ultima Modificación: {bill['fecha_modificacion']}")
+                    st.markdown(f"👤 Modificado Por: {bill['modificado_por']}")
+                    st.write(f"💼 Actividad: #{bill['idA']}-{bill['nombre_a']}")
+                    st.write(f"👤 Miembro: #{bill['idM']}-{bill['nombre_m']}")
                     
-                    if bill['estado'] == "Abierta":
-                        st.markdown(f'''### 🔴 :red[{bill['estado']}]''')
-                    elif bill['estado'] == "En Proceso":
-                        st.markdown(f'''### 🟡 :yellow[{bill['estado']}]''')
+                    if bill['estatus'] == "Abierta":
+                        st.markdown(f'''### 🔴 :red[{bill['estatus']}]''')
+                    elif bill['estatus'] == "En Proceso":
+                        st.markdown(f'''### 🟡 :yellow[{bill['estatus']}]''')
                     else:
-                        st.markdown(f'''### 🟢 :green[{bill['estado']}]''')
+                        st.markdown(f'''### 🟢 :green[{bill['estatus']}]''')
                     
             
             # Actualizar el índice para alternar entre las columnas
@@ -67,36 +67,44 @@ with tab_ins_bill:
         #Obtenemos las actividades y los miembros disponibles
         supports_ins_bills = bd.consultar("SELECT idMiembro, nombre FROM miembro;")
         activities_ins_bills = bd.consultar("SELECT idActividad, nombre FROM actividad;")
-        
+        combined_supports = [f"#{row['idMiembro']} - {row['nombre']}" for index, row in supports_ins_bills.iterrows()]
+        combined_activities = [f"#{row['idActividad']} - {row['nombre']}" for index, row in activities_ins_bills.iterrows()]    
+
         # Entradas del formulario
         name_ins_bill = st.text_input("Nombre*: ", placeholder="Taxi a Sitio")
         cost_ins_bill = st.text_input("Costo*: ", placeholder="300.00")
-        tipo_ins_bill = st.selectbox("Tipo: ",["Viaje", "Comida", "Hospedaje"])
+        type_ins_bill = st.selectbox("Tipo: ",["Viaje", "Comida", "Hospedaje"])
         tax_ins_bill = st.text_input("Impuesto*: ", placeholder="45.00")
+        support_ins_bill = st.selectbox("Miembro: ", combined_supports)
+        activity_ins_bill = st.selectbox("Actvidad: ", combined_activities)
 
-
-
-        life_ins_bill = st.selectbox("Vida Útil", ["1 Vez", "1 Año", "5 Años","10 Años"])
-        comments_ins_bill = st.text_area("Notas Adicionales: ", placeholder="Agrega tus comentarios")
         
         # Indicador de campos obligatorios
         st.markdown("*Campos Obligatorios")
         
+        # Valores por default
+        date_today = datetime.now()
+        dateemission_ins_bill = date_today.strftime("%Y-%m-%d")
+        createby_ins_bill = st.session_state['name']
+
+        #Extraccion id de los selectbox
+        id_support_ins = int (support_ins_bill.split(' - ')[0][1:])
+        id_activity_ins = int (activity_ins_bill.split(' - ')[0][1:])
+
         # Botón de envío
         submit_insert_bill = st.form_submit_button("Agregar")
 
         message_container = st.empty()
 
         if submit_insert_bill:
-            if not name_ins_bill.strip() or not type_ins_bill.strip() or not description_ins_bill.strip()\
-            or not category_ins_bill.strip() or not serialnumber_ins_bill.strip():
-                st.error("Recurso No Agregado")
+            if not name_ins_bill.strip() or not cost_ins_bill.strip() or not tax_ins_bill.strip():
+                st.error("Factura No Agregada")
                 st.info("Llene todos los campos obligatorios")
             else:
-                query_insert_bill = f"INSERT INTO recurso (nombre, tipo, descripcion, categoria, no_serie, estado_recurso, vida_util, notas ) VALUES ('{name_ins_bill}', '{type_ins_bill}', '{description_ins_bill}', '{category_ins_bill}', '{serialnumber_ins_bill}', 'En Stock', '{life_ins_bill}', '{comments_ins_bill}');"
+                query_insert_bill = f"INSERT INTO factura (nombre, fecha_emision, costo, tipo, impuesto, estatus, creado_por, fecha_modificacion, modificado_por, idActividad, idMiembro) VALUES ('{name_ins_bill}', '{dateemission_ins_bill}', '{cost_ins_bill}', '{type_ins_bill}', '{tax_ins_bill}', 'Abierta', '{createby_ins_bill}', '{dateemission_ins_bill}', '{createby_ins_bill}', '{id_activity_ins}', '{id_support_ins}'  );"
                 bd.insertar(query_insert_bill)
-                st.success("Recurso Agregado")
-                st.info(f"{name_ins_bill} -- {type_ins_bill} -- {type_ins_bill} -- {description_ins_bill} -- {category_ins_bill} -- {serialnumber_ins_bill} -- {life_ins_bill} -- En Stock -- {comments_ins_bill}")
+                st.success("Factura Agregada")
+                st.info(f"{name_ins_bill} -- {dateemission_ins_bill} -- {cost_ins_bill} -- {type_ins_bill} -- Abierta -- {createby_ins_bill} -- {activities_ins_bills} -- {support_ins_bill}")
                 
             # Para que se limpien los mensajes
             time.sleep(3)
@@ -104,63 +112,66 @@ with tab_ins_bill:
             st.rerun()
 
 with tab_upd_bill:
-    bills_available = bd.consultar("SELECT * FROM recurso;")
+    bills_available = bd.consultar("SELECT f.*, m.nombre as nombre_m, a.nombre as nombre_a FROM factura f INNER JOIN miembro m ON f.idMiembro=m.idMiembro INNER JOIN actividad a ON a.idActividad=f.idActividad;")
     
     if bills_available is not None:
-        combined_bills = [f"#{row['idRecurso']} - {row['nombre']}" for index, row in bills_available.iterrows()]
-        bill_selected = st.selectbox("Selecciona un Recurso", combined_bills, key="update_bills_sb")
+        combined_bills = [f"#{row['idFactura']} - {row['nombre']}" for index, row in bills_available.iterrows()]
+        bill_selected = st.selectbox("Selecciona una Factura", combined_bills, key="update_bills_sb")
         id_bill_selected = int (bill_selected.split(' - ')[0][1:])
-        bill_data = bills_available[bills_available['idRecurso']==id_bill_selected]
+        bill_data = bills_available[bills_available['idFactura']==id_bill_selected]
         
         #Necesitamos ademas saber el index del tipo, vida_util, estado
         type_dict = {
-            "Herramienta": 0,
-            "Material": 1
-        }
-
-        life_dict = {
-            "1 Vez": 0,
-            "1 Año": 1,
-            "5 Años": 2,
-            "10 Años": 3 
+            "Viaje": 0,
+            "Comida": 1,
+            "Hospedaje": 2
         }
 
         status_dict = {
-            "En Stock": 0,
-            "En Uso": 1
+            "Abierta": 0,
+            "Pendiente": 1
         }
 
         index_type = type_dict[bill_data['tipo'].iloc[0]]
-        index_life = life_dict[bill_data['vida_util'].iloc[0]]
-        index_status = status_dict[bill_data['estado_recurso'].iloc[0]]
+        index_status = status_dict[bill_data['estatus'].iloc[0]]
 
-
+        with st.container(border=True):
+            st.markdown(f"**Miembro: #{bill_data['idMiembro'].iloc[0]} - {bill_data['nombre_m'].iloc[0]}**")
+            st.markdown(f"**Actividad: #{bill_data['idActividad'].iloc[0]} - {bill_data['nombre_a'].iloc[0]}**")
         with st.form("update_bill", clear_on_submit= True):
-            name_upd_bill = st.text_input("Nombre*: ", value=f"{bill_data['nombre'].iloc[0]}", key="name_upd_bill")
-            type_upd_bill = st.selectbox("Tipo*: ", ["Herramienta", "Material"], index=index_type)
-            description_upd_bill = st.text_input("Descripción*: ", value=f"{bill_data['descripcion'].iloc[0]}")
-            category_upd_bill = st.text_input("Categoria*: ", value=f"{bill_data['categoria'].iloc[0]}")
-            serialnumber_upd_bill = st.text_input("No. Serie", value=f"{bill_data['no_serie'].iloc[0]}")
-            life_upd_bill = st.selectbox("Vida Útil", ["1 Vez", "1 Año", "5 Años","10 Años"], index=index_life)
-            state_upd_bill = st.selectbox("Estado", ["En Stock", "En Uso"], index=index_status)
-            comments_upd_bill = st.text_area("Notas Adicionales: ", value=f"{bill_data['notas'].iloc[0]}")
-            st.write("*Campos Obligatorios")
+            name_upd_bill = st.text_input("Nombre*: ", value=f"{bill_data['nombre'].iloc[0]}")
+            cost_upd_bill = st.text_input("Costo*: ", value=f"{bill_data['costo'].iloc[0]}")
+            type_upd_bill = st.selectbox("Tipo: ",["Viaje", "Comida", "Hospedaje"], index = index_type)
+            tax_upd_bill = st.text_input("Impuesto*: ", value=f"{bill_data['impuesto'].iloc[0]}")
+            status_upd_bill = st.selectbox("Estatus: ", ["Abierta", "Pendiente"], index=index_status)
+            support_upd_bill = st.selectbox("Miembro: ", combined_supports)
+            activity_upd_bill = st.selectbox("Actvidad: ", combined_activities)
+
             submit_upd_bill = st.form_submit_button("Actualizar")
         
+
+        # Generados automaticamente
+        date_today = datetime.now()
+        datemodified_upd_bill = date_today.strftime("%Y-%m-%d")
+        modifyby_upd_bill = st.session_state['name']
+
+        id_supportbill_selected = int (support_upd_bill.split(' - ')[0][1:])
+        id_activitytbill_selected = int (activity_upd_bill.split(' - ')[0][1:])
+
 
     message_container = st.empty()
 
     if submit_upd_bill:
-        if not name_upd_bill.strip() or not description_upd_bill.strip() or not serialnumber_upd_bill.strip():
-            st.error("Recurso No Actualizado")
+        if not name_upd_bill.strip() or not cost_upd_bill.strip() or not tax_upd_bill.strip():
+            st.error("Factura No Actualizada")
             st.info("Llene todos los campos obligatorios")
         else:
-            state_update_bill, msj_update_bill = bd.actualizar(f"UPDATE recurso SET nombre='{name_upd_bill}', tipo='{type_upd_bill}', descripcion='{description_upd_bill}', categoria='{category_upd_bill}', no_serie='{serialnumber_upd_bill}', vida_util='{life_upd_bill}', estado_recurso='{state_upd_bill}', notas='{comments_upd_bill}' WHERE idRecurso = '{id_bill_selected}';")
+            state_update_bill, msj_update_bill = bd.actualizar(f"UPDATE factura SET nombre='{name_upd_bill}', costo='{cost_upd_bill}', tipo='{type_upd_bill}', impuesto='{tax_upd_bill}', estatus='{status_upd_bill}', fecha_modificacion='{datemodified_upd_bill}', modificado_por='{modifyby_upd_bill}', idMiembro='{id_supportbill_selected}', idActividad='{id_activitytbill_selected}' WHERE idFactura = '{id_bill_selected}';")
             if state_update_bill == 1:
-                    st.success("Recurso Actualizado")
-                    st.info(f"{name_upd_bill} -- {type_upd_bill} -- {description_upd_bill} -- {category_upd_bill} -- {serialnumber_upd_bill} -- {comments_upd_bill}")
+                    st.success("Factura Actualizada")
+                    st.info(f"{name_upd_bill} -- {cost_upd_bill} -- {type_upd_bill} -- {tax_upd_bill} -- {status_upd_bill} -- {datemodified_upd_bill} -- {modifyby_upd_bill} -- {support_upd_bill} -- {activity_upd_bill}")
             else:
-                st.error("Recurso No Actualizado")
+                st.error("Factura Actualizada")
                 st.info(msj_update_bill)
             
         # Para que se limpien los mensajes
