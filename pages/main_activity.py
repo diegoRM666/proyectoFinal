@@ -19,7 +19,7 @@ tab_lst_activity, tab_ins_activity, tab_upd_activity, tab_del_activity = \
 
 
 with tab_lst_activity:
-    activities = bd.consultar("SELECT * FROM actividad;")
+    activities = bd.consultar("SELECT a.*, m.nombre as miembro_n, c.nombre as cliente_n FROM actividad a INNER JOIN miembro m ON a.idMiembro = m.idMiembro INNER JOIN cliente c ON a.idCliente = c.idCliente;")
 
     if activities is not None and not activities.empty:
 
@@ -38,10 +38,12 @@ with tab_lst_activity:
             with col:
                 with st.container(border=True):
                     st.markdown(f"## 💼 #{activity['idActividad']} - {activity['nombre']}")
-                    st.markdown(f"📆 Fecha Inicio: {activity['fecha_inicio']}")
+                    st.markdown(f'''📆 Fecha Inicio: :green[{activity['fecha_inicio']}]''')
                     st.markdown(f"🔠 Descripción: {activity['descripcion']}")
                     st.markdown(f"#️⃣ Tipo: {activity['tipo']}")
-                    if activity['acciones_realizadas'] != "":
+                    st.markdown(f"🏢 Cliente: {activity['cliente_n']}")
+                    st.markdown(f"👤 Atendido Por: {activity['miembro_n']}")
+                    if activity['acciones_realizadas'] != "" and activity['acciones_realizadas'] != "None":
                         st.markdown(f"⚙️ Acciones Realizadas: {activity['acciones_realizadas']}")
                     
                     if activity['estado'] in ["Abierto"]:
@@ -59,15 +61,24 @@ with tab_lst_activity:
         st.warning("No existen datos")
 
 
-with tab_ins_activity:
+with tab_ins_activity:    
+    ######################## 📦📦📦 ZONA APLANADO DE CAJAS 📦📦📦 ########################
     
+
+    ######################################################################################
 
     # Aqui va el formulario
     with st.form("insert_activity", clear_on_submit=True):
+        # Obtenemos los clientes disponibles
+        clients_available = bd.consultar("SELECT idCliente, nombre FROM cliente;")
+        combined_clients = [f"#{row['idCliente']} - {row['nombre']}" for index, row in clients_available.iterrows()]
         # Entradas del formulario
         name_ins_activity = st.text_input("Nombre*: ", placeholder="Reemplazo Inyector Tinta")
         description_ins_activity = st.text_area("Descripción*: ", placeholder="Se requiere el reemplazo de...")
         type_ins_activity = st.selectbox("Tipo*: ", ["Matenimiento", "Incidencia"])
+        client_ins_activity = st.selectbox("Cliente*: ", combined_clients)
+
+        id_client_ins = int (client_ins_activity.split(' - ')[0][1:])
 
         # Generación automatica del resto de campos necesarios para la inserción
         datestart_ins_activity_prev = datetime.now()
@@ -80,9 +91,10 @@ with tab_ins_activity:
             support_ins_activity = random.choice(supports_available_activity['id'].tolist())
             support_random_selected = supports_available_activity[supports_available_activity['id'] == support_ins_activity ]
         else:
-           st.warning("No hay Miembros Disponibles")
-           #Aqui se hara el mecanismo ese  
-
+            st.warning("No hay Miembros Disponibles. Se asignará al Miembro con menos actividades")
+            occupability_support = bd.consultar("SELECT idMiembro as id, count(*) as no_actividades FROM actividad GROUP BY idMiembro;")
+            support_ins_activity = random.choice(occupability_support['id'].tolist())
+            support_random_selected = occupability_support[occupability_support['id'] == support_ins_activity]
 
         # Indicador de campos obligatorios
         st.markdown("*Campos Obligatorios")
@@ -97,8 +109,9 @@ with tab_ins_activity:
                 st.error("Actividad No Creada")
                 st.info("Llene todos los campos obligatorios")
             else:
-                query_insert_activity = f"INSERT INTO actividad (nombre, fecha_inicio, descripcion, tipo, estado, idCliente ) VALUES ('{name_ins_activity}', '{datestart_ins_activity}', '{description_ins_activity}','{type_ins_activity}', '{state_ins_activity}', '{support_ins_activity}');"
+                query_insert_activity = f"INSERT INTO actividad (nombre, fecha_inicio, descripcion, acciones_realizadas, tipo, estado, idCliente, idMiembro ) VALUES ('{name_ins_activity}', '{datestart_ins_activity}', '{description_ins_activity}', 'None','{type_ins_activity}', '{state_ins_activity}', '{id_client_ins}', '{support_ins_activity}');"
                 bd.insertar(query_insert_activity)
+                st.write("")
 
                 st.success("Recurso Agregado")
                 st.info(f"{name_ins_activity} -- {description_ins_activity} -- {type_ins_activity} -- #{support_ins_activity}:{support_random_selected['nombre'].iloc[0]} -- {datestart_ins_activity}")
@@ -109,8 +122,9 @@ with tab_ins_activity:
             st.rerun()
 
 with tab_upd_activity:
-    activities_available = bd.consultar("SELECT a.*, mha.idMiembro FROM actividad a INNER JOIN miembro_has_actividad mha ON a.idActividad=mha.idActividad WHERE estado='Abierto' OR estado='En Curso' OR estado='Pendiente';")
+    activities_available = bd.consultar("SELECT * FROM actividad WHERE estado='Abierto' OR estado='En Curso' OR estado='Pendiente';")
     supports_upd = bd.consultar("SELECT idMiembro, nombre FROM miembro;")
+    clients_upd = bd.consultar("SELECT idCliente, nombre FROM cliente;")
 
     if activities_available is not None and supports_upd is not None:
         combined_activities = [f"#{row['idActividad']} - {row['nombre']}" for index, row in activities_available.iterrows()]
@@ -120,6 +134,7 @@ with tab_upd_activity:
         
         # Vamos a dar las posibilidades para los miembros
         combined_supports = [f"#{row['idMiembro']} - {row['nombre']}" for index, row in supports_upd.iterrows()]
+        combined_clients = [f"#{row['idCliente']} - {row['nombre']}" for index, row in clients_upd.iterrows()]
 
         # Necesitamos ademas saber el index del tipo, vida_util, estado
         type_dict = {
@@ -136,14 +151,22 @@ with tab_upd_activity:
         index_type = type_dict[activity_data['tipo'].iloc[0]]
         index_status = status_dict[activity_data['estado'].iloc[0]]
 
+        client_data_tmp = clients_upd[clients_upd['idCliente']== activity_data['idCliente'].iloc[0]]
+        support_data_tmp = supports_upd[supports_upd['idMiembro']== activity_data['idMiembro'].iloc[0]]   
+
+        with st.container(border=True):
+            st.markdown(f"**Cliente Actual: #{client_data_tmp['idCliente'].iloc[0]} - {client_data_tmp['nombre'].iloc[0]}**")
+            st.markdown(f"**Miembro Actual: #{support_data_tmp['idMiembro'].iloc[0]} - {support_data_tmp['nombre'].iloc[0]}**")
+
         with st.form("update_activity", clear_on_submit= True):
             name_upd_activity = st.text_input("Nombre*: ", value=f"{activity_data['nombre'].iloc[0]}", key="name_upd_activity")
-            type_upd_activity = st.selectbox("Tipo*: ", ["Herramienta", "Material"], index=index_type)
+            type_upd_activity = st.selectbox("Tipo*: ", ["Matenimiento", "Incidencia"], index=index_type)
             description_upd_activity = st.text_area("Descripción*: ", value=f"{activity_data['descripcion'].iloc[0]}")
             actions_upd_activity = st.text_area("Accciones: ", value=f"{activity_data['acciones_realizadas'].iloc[0]}")
             state_upd_activity = st.selectbox("Estado", ["Abierto", "En Curso", "Pendiente"], index=index_status)
             support_upd_activity = st.selectbox("Miembro: ", combined_supports, key="update_activities_support")
-
+            clients_upd_activity = st.selectbox("Cliente: ", combined_clients, key="update_activities_client")
+            
             st.write("*Campos Obligatorios")
             submit_upd_activity = st.form_submit_button("Actualizar")
         
@@ -155,21 +178,38 @@ with tab_upd_activity:
             st.error("Actividad No Actualizada")
             st.info("Llene todos los campos obligatorios")
         else:
+            #Parte en la que obtenemos el cliente y el miembro...
             support_selected_first = activity_data['idMiembro'].iloc[0]
             id_support_selected = int (support_upd_activity.split(' - ')[0][1:])
             support_data = supports_upd[supports_upd['idMiembro']==id_support_selected]
+           
+            id_client_selected = int (clients_upd_activity.split(' - ')[0][1:])
+            client_data = clients_upd[clients_upd['idCliente']==id_client_selected]
+            
+        
+            state_update_activity, msj_update_activity = bd.actualizar(f"UPDATE actividad SET nombre='{name_upd_activity}', tipo='{type_upd_activity}', descripcion='{description_upd_activity}', acciones_realizadas='{actions_upd_activity}', estado='{state_upd_activity}', idMiembro={id_support_selected}, idCliente={id_client_selected}  WHERE idActividad = '{id_activity_selected}';")
+            if state_update_activity == 1:      
+                # Comprobamos que no tenga mas actividades
+                support_upd_dispo = bd.consultar(f"SELECT idMiembro, count(*) as no_actividades FROM actividad WHERE idMiembro={support_selected_first} GROUP BY idMiembro;")
 
-            state_update_activity, msj_update_activity = bd.actualizar(f"UPDATE recurso SET nombre='{name_upd_activity}', tipo='{type_upd_activity}', descripcion='{description_upd_activity}', categoria='{category_upd_activity}', no_serie='{serialnumber_upd_activity}', vida_util='{life_upd_activity}', estado_recurso='{state_upd_activity}', notas='{comments_upd_activity}' WHERE idRecurso = '{id_activity_selected}';")
-            if id_support_selected != support_selected_first:
-                st.write("Son distintos")
+                if support_upd_dispo.empty:
+                    state_update_activity2, msj_update_activity2 = bd.actualizar(f"UPDATE miembro SET disponibilidad= 'Disponible', estatus='Libre' WHERE idMiembro={support_selected_first}")
+                    st.write("Cambia a Disponible Anterior") 
+                
+                state_update_activity3, msj_update_activity3 =bd.actualizar(f"UPDATE miembro SET disponibilidad = 'No Disponible', estatus='En Actividad' WHERE idMiembro={id_client_selected}")   
+                        
+                if state_update_activity == 1:
+                    st.success("Recurso Actualizado")
+                    st.info(f"{name_upd_activity} -- {type_upd_activity} -- {description_upd_activity} -- {type_upd_activity} -- {description_upd_activity} -- {actions_upd_activity} -- {state_upd_activity} -- {clients_upd_activity} -- {support_upd_activity}")
+            
+            ###########################
+            # Piensa en un ROLLBACK
+            ##########################
+            
             else:
-                st.write("Son iguales")
-            #if state_update_activity == 1:
-            #        st.success("Recurso Actualizado")
-            #        st.info(f"{name_upd_activity} -- {type_upd_activity} -- {description_upd_activity} -- {category_upd_activity} -- {serialnumber_upd_activity} -- {comments_upd_activity}")
-            #else:
-            #    st.error("Recurso No Actualizado")
-            #    st.info(msj_update_activity)
+
+                st.error("Recurso No Actualizado")
+                st.info(msj_update_activity)
             
         # Para que se limpien los mensajes
         time.sleep(3)
