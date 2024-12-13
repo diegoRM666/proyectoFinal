@@ -10,11 +10,11 @@ import logic.bd as bd
 menu_with_redirect()
 
 #Creamos un titulo
-st.markdown("# 🔧 Recursos")
+st.markdown("# 💵 Facturas")
 
 # Mostrar las disintas actividades a realizar
 tab_lst_resource, tab_ins_resource, tab_upd_resource, tab_del_resource = \
-      st.tabs(["Listar Recursos","Agregar Recurso", "Actualizar Recurso", "Eliminar Recurso"])
+      st.tabs(["Listar Facturas","Agregar Factura", "Actualizar Factura", "Eliminar Factura"])
 
 
 with tab_lst_resource:
@@ -89,7 +89,7 @@ with tab_ins_resource:
                 query_insert_resource = f"INSERT INTO recurso (nombre, tipo, descripcion, categoria, no_serie, estado_recurso, vida_util, notas ) VALUES ('{name_ins_resource}', '{type_ins_resource}', '{description_ins_resource}', '{category_ins_resource}', '{serialnumber_ins_resource}', 'En Stock', '{life_ins_resource}', '{comments_ins_resource}');"
                 bd.insertar(query_insert_resource)
                 st.success("Recurso Agregado")
-                st.info(f"{name_ins_resource} -- {type_ins_resource} -- {description_ins_resource} -- {category_ins_resource} -- {serialnumber_ins_resource} -- {life_ins_resource} -- En Stock -- {comments_ins_resource}")
+                st.info(f"{name_ins_resource} -- {type_ins_resource} -- {type_ins_resource} -- {description_ins_resource} -- {category_ins_resource} -- {serialnumber_ins_resource} -- {life_ins_resource} -- En Stock -- {comments_ins_resource}")
                 
             # Para que se limpien los mensajes
             time.sleep(3)

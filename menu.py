@@ -10,6 +10,8 @@ def authenticated_menu():
         st.sidebar.page_link("pages/main_client.py", label="Clientes")
         st.sidebar.page_link("pages/main_support.py", label="Miembros")
         st.sidebar.page_link("pages/main_resource.py", label="Recursos")
+        st.sidebar.page_link("pages/main_bill.py", label="Factura")
+        st.sidebar.page_link("pages/main_activity.py", label="Actividad")
 
 def unauthenticated_menu():
     # Show a navigation menu for unauthenticated users
