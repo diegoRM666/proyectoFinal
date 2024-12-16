@@ -125,6 +125,7 @@ DEFAULT CHARACTER SET = utf8mb3;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `erp`.`factura` (
   `idFactura` INT NOT NULL AUTO_INCREMENT,
+  `nombre` VARCHAR(50),
   `fecha_emision` DATE NULL DEFAULT NULL,
   `costo` DOUBLE NULL DEFAULT NULL,
   `tipo` VARCHAR(45) NULL DEFAULT NULL,

@@ -14,7 +14,7 @@ st.markdown("# 💵 Facturas")
 
 # Mostrar las disintas actividades a realizar
 tab_lst_bill, tab_ins_bill, tab_upd_bill, tab_del_bill = \
-      st.tabs(["Listar Facturas","Agregar Factura", "Actualizar Factura", "Eliminar Factura"])
+      st.tabs(["Listar Facturas","Agregar Factura", "Actualizar Factura", "Cerrar Factura"])
 
 
 with tab_lst_bill:
@@ -92,7 +92,7 @@ with tab_ins_bill:
         id_activity_ins = int (activity_ins_bill.split(' - ')[0][1:])
 
         # Botón de envío
-        submit_insert_bill = st.form_submit_button("Agregar")
+        submit_insert_bill = st.form_submit_button("Agregar", use_container_width=True)
 
         message_container = st.empty()
 
@@ -112,7 +112,7 @@ with tab_ins_bill:
             st.rerun()
 
 with tab_upd_bill:
-    bills_available = bd.consultar("SELECT f.*, m.nombre as nombre_m, a.nombre as nombre_a FROM factura f INNER JOIN miembro m ON f.idMiembro=m.idMiembro INNER JOIN actividad a ON a.idActividad=f.idActividad;")
+    bills_available = bd.consultar("SELECT f.*, m.nombre as nombre_m, a.nombre as nombre_a FROM factura f INNER JOIN miembro m ON f.idMiembro=m.idMiembro INNER JOIN actividad a ON a.idActividad=f.idActividad WHERE f.estatus != 'Cerrada';")
     
     if bills_available is not None:
         combined_bills = [f"#{row['idFactura']} - {row['nombre']}" for index, row in bills_available.iterrows()]
@@ -147,7 +147,7 @@ with tab_upd_bill:
             support_upd_bill = st.selectbox("Miembro: ", combined_supports)
             activity_upd_bill = st.selectbox("Actvidad: ", combined_activities)
 
-            submit_upd_bill = st.form_submit_button("Actualizar")
+            submit_upd_bill = st.form_submit_button("Actualizar", use_container_width=True)
         
 
         # Generados automaticamente
@@ -173,8 +173,55 @@ with tab_upd_bill:
             else:
                 st.error("Factura Actualizada")
                 st.info(msj_update_bill)
-            
         # Para que se limpien los mensajes
         time.sleep(3)
         message_container.empty()
         st.rerun()
+
+with tab_del_bill:
+    st.markdown("## Cerrar Factura")
+    st.warning("Una factura cerrada no podrá modificarse.")
+    st.warning("Esta la podrá consultar en el listado de facturas. En cuanto la actividad a la que está asociada sea cerrada, podrá consultar le histórico en Actividades.")
+
+    bills_delete_available = bd.consultar("SELECT f.*, m.idMiembro as idM, a.idActividad as idA, m.nombre as nombre_m, a.nombre as nombre_a FROM factura f INNER JOIN miembro m ON f.idMiembro=m.idMiembro INNER JOIN actividad a ON a.idActividad=f.idActividad;")
+    
+    if bills_delete_available is not None:
+        combined_bills_delete = [f"#{row['idFactura']} - {row['nombre']}" for index, row in bills_delete_available.iterrows()]
+        bill_selected_delete = st.selectbox("Selecciona una Factura", combined_bills_delete, key="delete_bills_sb")
+        id_bill_selected_delete = int (bill_selected_delete.split(' - ')[0][1:])
+        bill_data_delete = bills_delete_available[bills_delete_available['idFactura']==id_bill_selected_delete]
+
+        col1, col2, col3 = st.columns([1,4,1])
+
+        with col2:
+            with st.container(border=True):
+                st.markdown(f"## 💵 #{bill_data_delete['idFactura'].iloc[0]} - {bill_data_delete['nombre'].iloc[0]}")
+                st.markdown(f"📆 Fecha Emision: {bill_data_delete['fecha_emision'].iloc[0]}")
+                st.markdown(f"🪙 Costo: {bill_data_delete['costo'].iloc[0]}")
+                st.markdown(f"📖 Tipo: {bill_data_delete['tipo'].iloc[0]}")
+                st.markdown(f"📈 Impuesto: {bill_data_delete['impuesto'].iloc[0]}")
+                st.markdown(f"👤 Creado Por: {bill_data_delete['creado_por'].iloc[0]}")
+                st.markdown(f"📅 Ultima Modificación: {bill_data_delete['fecha_modificacion'].iloc[0]}")
+                st.markdown(f"👤 Modificado Por: {bill_data_delete['modificado_por'].iloc[0]}")
+                st.write(f"💼 Actividad: #{bill_data_delete['idA'].iloc[0]}-{bill_data_delete['nombre_a'].iloc[0]}")
+                st.write(f"👤 Miembro: #{bill_data_delete['idM'].iloc[0]}-{bill_data_delete['nombre_m'].iloc[0]}")
+                
+                if bill_data_delete['estatus'].iloc[0] == "Abierta":
+                    st.markdown(f'''### 🔴 :red[{bill_data_delete['estatus'].iloc[0]}]''')
+                elif bill_data_delete['estatus'] == "En Proceso":
+                    st.markdown(f'''### 🟡 :yellow[{bill_data_delete['estatus'].iloc[0]}]''')
+                else:
+                    st.markdown(f'''### 🟢 :green[{bill_data_delete['estatus'].iloc[0]}]''')
+                
+                
+        with col2:
+                if st.button("Cerrar Factura", use_container_width=True):
+                    date_today = datetime.today()
+                    datemodified_del_bill = date_today.strftime("%Y-%m-%d")
+                    modifyby_del_bill = st.session_state['name']
+
+                    # La parte interesante surge aquí. 
+                    state_del_bill, msj_del_bill = bd.actualizar(f"UPDATE factura SET fecha_modificacion =' {datemodified_del_bill}', modificado_por='{modifyby_del_bill}', estatus='Cerrada'")
+                    
+                    #Solamente actualizaremos el estado de la factura, y todo lo delegaremos a cuando cerremos la actividad, en ese momento, esta factura se eliminará de la tabla de facturas
+                    # y pasara a ser parte de la tabla histórica que mantiene todos los daots. 
