@@ -160,3 +160,38 @@ with tab_upd_resource:
         time.sleep(3)
         message_container.empty()
         st.rerun()
+
+
+with tab_del_resource:
+    resources_avaliable = bd.consultar("SELECT * FROM recurso")
+    if resources_avaliable is not None:
+        combined_resources = [f"#{row['idRecurso']} - {row['nombre']}" for index, row in resources_avaliable.iterrows()]
+        resource_selected = st.selectbox("Selecciona un Recurso", combined_resources)
+        id_resource_selected = int(resource_selected.split(' - ')[0][1:])
+        resource_data = resources_avaliable[resources_avaliable['idRecurso'] == id_resource_selected]
+
+        # Hagamos la notifiación de que no se puede eliminar si tiene actividades abiertas
+        resource_with_activities = bd.consultar(f"SELECT r.idRecurso, count(*) as act_abiertas FROM actividad_has_recurso a INNER JOIN recurso r ON a.idRecurso=r.idRecurso WHERE a.idRecurso={id_resource_selected} GROUP BY a.idRecurso;")
+
+        with st.container(border = True):
+            st.markdown(f"## 🔧 {resource_data["nombre"].iloc[0]}")
+            st.markdown(f"🔠 Descripción: {resource_data["descripcion"].iloc[0]}")
+            st.markdown(f"#️⃣ No. Serie: {resource_data["no_serie"].iloc[0]}")
+        
+        with st.container():
+            with st.popover(f"Eliminar", use_container_width=True):
+                st.write(f"¿Seguro que quieres eliminar a {resource_data["nombre"].iloc[0]}?")
+                if st.button("Si. Estoy Seguro"):
+                    if resource_with_activities.empty:
+                        state_del, ms_del= bd.eliminar(f"DELETE FROM recurso WHERE idRecurso='{id_resource_selected}'")
+                        st.success("Recurso Eliminado")
+                        time.sleep(3)
+                        message_container.empty()
+                        st.rerun()
+                    else: 
+                        st.error("Recurso No Eliminado")
+                        time.sleep(3)
+                        message_container.empty()
+                        st.rerun()
+    else:
+        st.warning("No hay datos para mostrar...")

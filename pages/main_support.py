@@ -61,7 +61,7 @@ with tab_ins_support:
         phone_ins_support = st.text_input("Teléfono de Contacto*: ", placeholder="5530104575")
         email_ins_support = st.text_input("Email*: ", placeholder="juanmontes@test.com")
         address_ins_support = st.text_input("Dirección*: ", placeholder="Calle Siempre Viva 62 Col. El Temazcal")
-        status_ins_support = st.selectbox("Estatus", ["Libre","Vacaciones","En Actividad", "Incapacidad"])
+        status_ins_support = "Libre"
         comments_ins_support = st.text_area("Notas Adicionales: ", placeholder="Agrega tus comentarios")
         
         # Indicador de campos obligatorios
@@ -149,3 +149,41 @@ with tab_upd_support:
         time.sleep(3)
         message_container.empty()
         st.rerun()
+
+
+with tab_del_support:
+    supports_avaliable = bd.consultar("SELECT * FROM miembro")
+    if supports_avaliable is not None:
+        combined_supports = [f"#{row['idMiembro']} - {row['nombre']}" for index, row in supports_avaliable.iterrows()]
+        support_selected = st.selectbox("Selecciona un Miembro", combined_supports)
+        id_support_selected = int(support_selected.split(' - ')[0][1:])
+        support_data = supports_avaliable[supports_avaliable['idMiembro'] == id_support_selected]
+
+        # Hagamos la notifiación de que no se puede eliminar si tiene actividades abiertas
+        support_with_activities = bd.consultar(f"SELECT a.idMiembro, count(*) as act_abiertas FROM actividad a INNER JOIN miembro m ON a.idMiembro=m.idMiembro WHERE a.idMiembro={id_support_selected} GROUP BY a.idMiembro;")
+
+        with st.container(border = True):
+            st.markdown(f"## 👤 {support_data["nombre"].iloc[0]}")
+            st.markdown(f"☎️ Telefono: {support_data["telefono"].iloc[0]}")
+            st.markdown(f"📧 Email: {support_data["email"].iloc[0]}")
+            st.markdown(f"🔤 Direccion: {support_data["direccion"].iloc[0]}")
+        
+        with st.container():
+            with st.popover(f"Eliminar", use_container_width=True):
+                st.write(f"¿Seguro que quieres eliminar a {support_data["nombre"].iloc[0]}?")
+                if st.button("Si. Estoy Seguro"):
+                    if support_with_activities.empty:
+                        state_del, ms_del= bd.eliminar(f"DELETE FROM miembro WHERE idMiembro='{id_support_selected}'")
+                        st.success("Miembro Eliminado")
+                        time.sleep(3)
+                        message_container.empty()
+                        st.rerun()
+                    else: 
+                        st.error("Miembro No Eliminado")
+                        st.info(f"El miembro: #{support_data['idMiembro'].iloc[0]} - {support_data['nombre'].iloc[0]} tiene asociadas actividades.")
+                        st.info("Primero intenta cerrar las actividades")
+                        time.sleep(3)
+                        message_container.empty()
+                        st.rerun()
+    else:
+        st.warning("No hay datos para mostrar...")

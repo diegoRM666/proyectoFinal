@@ -123,11 +123,18 @@ with tab_upd_client:
             st.rerun()
             
 with tab_del_client:
+    clients_avaliable = bd.consultar("SELECT * FROM cliente")
     if clients_avaliable is not None:
         combined_clients = [f"#{row['idCliente']} - {row['nombre']}" for index, row in clients_avaliable.iterrows()]
         client_selected = st.selectbox("Selecciona un Cliente", combined_clients)
         id_client_selected = int(client_selected.split(' - ')[0][1:])
         client_data = clients_avaliable[clients_avaliable['idCliente'] == id_client_selected]
+
+        # Hagamos la notifiación de que no se puede eliminar si tiene actividades abiertas
+        client_with_activities = bd.consultar(f"SELECT a.idCliente, count(*) as act_abiertas FROM actividad a INNER JOIN cliente c ON a.idCLiente=c.idCliente WHERE a.idCliente={id_client_selected} GROUP BY a.idCliente;")
+
+        
+
 
         with st.container(border = True):
             st.markdown(f"## 🏢 {client_data["nombre"].iloc[0]}")
@@ -135,10 +142,23 @@ with tab_del_client:
             st.markdown(f"📧 Email: {client_data["email"].iloc[0]}")
             st.markdown(f"🔤 Direccion: {client_data["direccion"].iloc[0]}")
         
-        with st.popover(f"Eliminar"):
-            st.write(f"¿Seguro que quieres eliminar a {client_data["nombre"].iloc[0]}?")
-            if st.button("Si. Estoy Seguro"):
-                #state_del, ms_del= bd.eliminar(f"DELETE FROM cliente WHERE idCliente='{id_client_selected}'")
-                st.success("Cliente Eliminado")
+        with st.container():
+            with st.popover(f"Eliminar", use_container_width=True):
+                st.write(f"¿Seguro que quieres eliminar a {client_data["nombre"].iloc[0]}?")
+                if st.button("Si. Estoy Seguro"):
+                    if client_with_activities.empty:
+                        state_del, ms_del= bd.eliminar(f"DELETE FROM cliente WHERE idCliente='{id_client_selected}'")
+                        st.success("Cliente Eliminado")
+                        time.sleep(3)
+                        message_container.empty()
+                        st.rerun()
+                    else: 
+                        st.error("Cliente No Eliminado")
+                        st.info(f"El cliente: #{client_data['idCliente'].iloc[0]} - {client_data['nombre'].iloc[0]} tiene asociadas actividades.")
+                        st.info("Primero intenta cerrar las actividades")
+                        time.sleep(3)
+                        message_container.empty()
+                        st.rerun()
     else:
         st.warning("No hay datos para mostrar...")
+
