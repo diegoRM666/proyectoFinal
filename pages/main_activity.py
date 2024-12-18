@@ -49,7 +49,7 @@ with tab_lst_activity:
                     if activity['estado'] in ["Abierto"]:
                         st.markdown(f'''### 🔴 :red[{activity['estado']}]''')
                     elif activity['estado'] in ["En Curso", "Pendiente", "Escalada Con Fabricante" ]:
-                        st.markdown(f'''### 🟡 :yellow[{activity['estado']}]''')
+                        st.markdown(f'''### 🟡 :orange[{activity['estado']}]''')
                     else: 
                         st.markdown(f'''### 🟢 :green[{activity['estado']}]''')
                     

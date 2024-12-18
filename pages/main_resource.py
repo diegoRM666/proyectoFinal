@@ -15,7 +15,7 @@ st.markdown("# 🔧 Recursos")
 
 # Mostrar las disintas actividades a realizar
 tab_lst_resource, tab_asign_resource,tab_ins_resource, tab_upd_resource, tab_del_resource, tab_new_resource = \
-      st.tabs(["Listar Recursos","Asignar Recursos","Agregar Recurso", "Actualizar Recurso", "Eliminar Recurso", "Nuevo Recurso"])
+      st.tabs(["Listar Recursos","Asignar Recursos","Agregar Recurso", "Actualizar Recurso", "Eliminar Recurso", "Petición Recurso"])
 
 
 with tab_asign_resource: 
@@ -313,6 +313,7 @@ with tab_del_resource:
                         st.rerun()
                     else: 
                         st.error("Recurso No Eliminado")
+                        st.info("Este recurso esta asociado a actividades, no puede ser eliminado.")
                         time.sleep(3)
                         message_container.empty()
                         st.rerun()
