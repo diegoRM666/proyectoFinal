@@ -14,9 +14,108 @@ menu_with_redirect()
 st.markdown("# 🔧 Recursos")
 
 # Mostrar las disintas actividades a realizar
-tab_lst_resource, tab_ins_resource, tab_upd_resource, tab_del_resource, tab_new_resource = \
-      st.tabs(["Listar Recursos","Agregar Recurso", "Actualizar Recurso", "Eliminar Recurso", "Nuevo Recurso"])
+tab_lst_resource, tab_asign_resource,tab_ins_resource, tab_upd_resource, tab_del_resource, tab_new_resource = \
+      st.tabs(["Listar Recursos","Asignar Recursos","Agregar Recurso", "Actualizar Recurso", "Eliminar Recurso", "Nuevo Recurso"])
 
+
+with tab_asign_resource: 
+    resources_to_asign = bd.consultar("SELECT * FROM recurso WHERE estado_recurso = 'En Stock'")
+    activities_to_assign = bd.consultar("SELECT * FROM actividad;")
+
+    if resources_to_asign is not None and not resources_to_asign.empty and activities_to_assign is not None and not activities_to_assign.empty:
+        # Crear listas con recursos y actividades
+        combined_resources_toasign = [f"#{row['idRecurso']} - {row['nombre']}" for index, row in resources_to_asign.iterrows()]
+        combined_activities_toasign = [f"#{row['idActividad']} - {row['nombre']}" for index, row in activities_to_assign.iterrows()]
+
+        # Selección de actividad
+        activity_selected = st.selectbox("Elija una Actividad: ", combined_activities_toasign, key="asign_resources")
+        id_activity_selected = int(activity_selected.split(' - ')[0][1:])
+
+        # Veremos que recursos estan asginados a que actividad
+        resources_asigned_to_activity = bd.consultar(f"""
+            SELECT r.idRecurso, r.nombre 
+            FROM actividad_has_recurso ahr
+            INNER JOIN recurso r ON r.idRecurso = ahr.idRecurso
+            INNER JOIN actividad a ON a.idActividad = ahr.idActividad
+            WHERE ahr.idActividad = '{id_activity_selected}'
+        """)
+        st.markdown("### Asignados a la actividad:")
+
+        # Verificar si hay recursos asignados a la actividad
+        if resources_asigned_to_activity is not None and not resources_asigned_to_activity.empty:
+            combined_resources_assigned = [f"#{row['idRecurso']} - {row['nombre']}" for index, row in resources_asigned_to_activity.iterrows()]
+            
+            # Crear un contenedor para los recursos asignados con checkboxes
+            with st.container(border=True):
+                assigned_resources = []
+                
+                for resource_a in combined_resources_assigned:
+                    # Crear un checkbox para cada recurso asignado
+                    if st.checkbox(resource_a, value=True):
+                        assigned_resources.append(resource_a)
+
+                # Botón para desvincular los recursos seleccionados
+                if st.button("Desvincular"):
+                    if assigned_resources:
+                        # Iterar sobre los recursos seleccionados
+                        for asigned in assigned_resources:
+                            # Obtener el id del recurso
+                            id_resource_asigned = int(asigned.split(' - ')[0][1:])
+                            
+                            # Eliminar la relación de la tabla de vinculación
+                            bd.eliminar(f"DELETE FROM actividad_has_recurso WHERE idActividad='{id_activity_selected}' AND idRecurso='{id_resource_asigned}';")
+                            
+                            # Actualizar el estado del recurso a "En Stock"
+                            state_asigned, msj_asigned = bd.actualizar(f"UPDATE recurso SET estado_recurso = 'En Stock' WHERE idRecurso='{id_resource_asigned}'")
+                            
+                            # Verificar si la operación de eliminación y actualización fue exitosa
+                            if state_asigned:
+                                st.success(f"Recurso #{id_resource_asigned} desvinculado correctamente.")
+                            else:
+                                st.error(f"Hubo un error al desvincular el recurso #{id_resource_asigned}.")
+                        # Después de la asignación, actualizar la página
+                        time.sleep(3)
+                        st.rerun()
+                    else:
+                        st.warning("No se seleccionaron recursos para desvincular.")
+        else:
+            # Si no hay recursos asignados a la actividad
+            st.info("No hay recursos asignados a esta actividad.")
+        
+
+        # Muestra los checkboxes para los recursos
+        st.markdown("### Asignar a la actividad")
+        with st.container(border=True):
+            selected_resources = []
+            for resource in combined_resources_toasign:
+                # Usar st.checkbox para cada recurso
+                if st.checkbox(resource):
+                    selected_resources.append(resource)
+
+            # Al presionar el botón "Asignar"
+            if st.button("Asignar"):
+                if selected_resources:
+                    # Asignar los recursos seleccionados a la actividad
+                    for selected in selected_resources:
+                        id_resource_selected = int(selected.split(' - ')[0][1:])
+                        insert_result= bd.insertar(f"INSERT INTO actividad_has_recurso (idActividad, idRecurso) VALUES('{id_activity_selected}', '{id_resource_selected}')")
+                        
+                        # Actualizar el estado del recurso a "En Uso"
+                        update_result = bd.actualizar(f"UPDATE recurso SET estado_recurso = 'En Uso' WHERE idRecurso={id_resource_selected}")
+
+                        # Validar si las operaciones fueron exitosas
+                        if insert_result and update_result:
+                            st.success(f"Recurso #{id_resource_selected} asignado correctamente a la actividad #{id_activity_selected}.")
+                        else:
+                            st.error(f"Hubo un error al asignar el recurso #{id_resource_selected}.")
+                    
+                    # Después de la asignación, actualizar la página
+                    time.sleep(3)
+                    st.rerun()
+                else:
+                    st.warning("No hay recursos seleccionados.")
+    else:
+        st.warning("No hay recursos o actividades para mostrar.")
 
 with tab_lst_resource:
     resources = bd.consultar("SELECT nombre, tipo, descripcion, categoria, no_serie, estado_recurso, vida_util, fecha_ingreso, notas FROM recurso;")
