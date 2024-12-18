@@ -14,8 +14,8 @@ menu_with_redirect()
 st.markdown("# 💼 Actividad")
 
 # Mostrar las disintas actividades a realizar
-tab_lst_activity, tab_ins_activity, tab_upd_activity, tab_del_activity = \
-      st.tabs(["Listar Actividades","Crear Actividad", "Actualizar Actividad", "Eliminar Actividad"])
+tab_lst_activity, tab_ins_activity, tab_upd_activity, tab_del_activity= \
+      st.tabs(["Listar Actividades","Crear Actividad", "Actualizar Actividad", "Terminar Actividad"])
 
 
 with tab_lst_activity:
@@ -62,11 +62,6 @@ with tab_lst_activity:
 
 
 with tab_ins_activity:    
-    ######################## 📦📦📦 ZONA APLANADO DE CAJAS 📦📦📦 ########################
-    
-
-    ######################################################################################
-
     # Aqui va el formulario
     with st.form("insert_activity", clear_on_submit=True):
         # Obtenemos los clientes disponibles
@@ -215,3 +210,23 @@ with tab_upd_activity:
         time.sleep(3)
         message_container.empty()
         st.rerun()
+
+
+with tab_del_activity:
+    st.info("Un actividad terminada no podrá modificarse.")
+    st.info("Si cierra una actividad se cerrarán todas las facturas asociadas, en caso de estar abiertas")
+
+    activities_delete_available = bd.consultar("SELECT a.*, c.nombre as nombre_c, m.nombre as nombre_m  FROM actividad a INNER JOIN cliente c ON a.idCliente=c.idCliente INNER JOIN miembro m ON a.idMiembro=m.idMiembro;")
+    if activities_delete_available is not None:
+        combined_activities_delete = [f"#{row['idActividad']} - {row['nombre']}" for index, row in activities_delete_available.iterrows()]
+        activity_selected_delete = st.selectbox("Selecciona una Actividad", combined_activities_delete, key="delete_activities_sb")
+        id_activity_selected_delete = int (activity_selected_delete.split(' - ')[0][1:])
+        activity_data_delete = activities_delete_available[activities_delete_available['idActividad']==id_activity_selected_delete]
+    
+        with st.container(border = True):
+            st.markdown(f"## 💼 #{activity_data_delete["idActividad"].iloc[0]} - {activity_data_delete["nombre"].iloc[0]}")
+            st.markdown(f"📆 Fecha Inicio: {activity_data_delete["fecha_inicio"].iloc[0]}")
+            st.markdown(f"🔠 Descripcion: {activity_data_delete["descripcion"].iloc[0]}")
+            st.markdown(f"🏢 Cliente: #{activity_data_delete["idCliente"].iloc[0]} - {activity_data_delete["nombre_c"].iloc[0]}")
+            st.markdown(f"👤 Miembro: #{activity_data_delete["idMiembro"].iloc[0]} - {activity_data_delete["nombre_m"].iloc[0]}")
+

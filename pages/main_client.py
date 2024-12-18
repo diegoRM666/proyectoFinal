@@ -133,8 +133,6 @@ with tab_del_client:
         # Hagamos la notifiación de que no se puede eliminar si tiene actividades abiertas
         client_with_activities = bd.consultar(f"SELECT a.idCliente, count(*) as act_abiertas FROM actividad a INNER JOIN cliente c ON a.idCLiente=c.idCliente WHERE a.idCliente={id_client_selected} GROUP BY a.idCliente;")
 
-        
-
 
         with st.container(border = True):
             st.markdown(f"## 🏢 {client_data["nombre"].iloc[0]}")

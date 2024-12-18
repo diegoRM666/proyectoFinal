@@ -152,6 +152,7 @@ with tab_upd_support:
 
 
 with tab_del_support:
+    st.warning("Si eliminamos un miembro, se eliminará de igual manera sus peticiones")
     supports_avaliable = bd.consultar("SELECT * FROM miembro")
     if supports_avaliable is not None:
         combined_supports = [f"#{row['idMiembro']} - {row['nombre']}" for index, row in supports_avaliable.iterrows()]
@@ -174,6 +175,7 @@ with tab_del_support:
                 if st.button("Si. Estoy Seguro"):
                     if support_with_activities.empty:
                         state_del, ms_del= bd.eliminar(f"DELETE FROM miembro WHERE idMiembro='{id_support_selected}'")
+                        state_del_reques, ms_del_request= bd.eliminar(f"DELETE FROM peticion_nuevo_recurso WHERE idMiembro='{id_support_selected}'")
                         st.success("Miembro Eliminado")
                         time.sleep(3)
                         message_container.empty()
