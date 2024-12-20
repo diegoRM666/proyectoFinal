@@ -60,6 +60,34 @@ with tab_lst_activity:
     else:
         st.warning("No existen datos")
 
+    st.markdown("---")
+    st.markdown("### Actividades Cerradas")
+
+    activities_closed =bd.consultar("SELECT * FROM actividad_hist;")
+
+    if activities_closed is not None and not activities_closed.empty:
+        col1, col2, col3 = st.columns(3)
+        
+        # Iterar sobre los activities en el DataFrame
+        for _, activity in activities_closed.iterrows():
+            
+            with st.container(border=True):
+                st.markdown(f"## 💼 #{activity['idActividad']} - {activity['nombre_a']}")
+                st.markdown(f"🔠 {activity['descripcion_a']}")
+                st.markdown(f'''📆 Periodo: :green[{activity['fecha_inicio_a']}] - :red[{activity['fecha_fin_a']}]''')
+                st.markdown(f"⚙️ Acciones Realizadas: {activity['acciones_realizadas_a']}")
+                st.markdown(f"#️⃣ Tipo: {activity['tipo_a']}")
+                st.markdown(f"### 🏢 #{activity['idCliente']} - {activity['nombre_c']}")
+                st.markdown(f"☎️ {activity['telefono_c']}")
+                st.markdown(f"📧 {activity['email_c']}")
+                st.markdown(f"### 👤 #{activity['idMiembro']} - {activity['nombre_m']}")
+                st.markdown(f"☎️ {activity['telefono_m']}")
+                st.markdown(f"📧 {activity['email_m']}")
+
+                  
+    else:
+        st.warning("No existen datos")
+
 
 with tab_ins_activity:    
     # Aqui va el formulario
@@ -91,6 +119,7 @@ with tab_ins_activity:
             support_ins_activity = random.choice(occupability_support['id'].tolist())
             support_random_selected = occupability_support[occupability_support['id'] == support_ins_activity]
 
+
         # Indicador de campos obligatorios
         st.markdown("*Campos Obligatorios")
         
@@ -109,7 +138,7 @@ with tab_ins_activity:
                 st.write("")
 
                 st.success("Recurso Agregado")
-                st.info(f"{name_ins_activity} -- {description_ins_activity} -- {type_ins_activity} -- #{support_ins_activity}:{support_random_selected['nombre'].iloc[0]} -- {datestart_ins_activity}")
+                st.info(f"{name_ins_activity} -- {description_ins_activity} -- {type_ins_activity} -- #{client_ins_activity} -- {datestart_ins_activity}")
                 
             # Para que se limpien los mensajes
             time.sleep(5)
@@ -222,7 +251,7 @@ with tab_del_activity:
         activity_selected_delete = st.selectbox("Selecciona una Actividad", combined_activities_delete, key="delete_activities_sb")
         id_activity_selected_delete = int (activity_selected_delete.split(' - ')[0][1:])
         activity_data_delete = activities_delete_available[activities_delete_available['idActividad']==id_activity_selected_delete]
-    
+
         with st.container(border = True):
             st.markdown(f"## 💼 #{activity_data_delete["idActividad"].iloc[0]} - {activity_data_delete["nombre"].iloc[0]}")
             st.markdown(f"📆 Fecha Inicio: {activity_data_delete["fecha_inicio"].iloc[0]}")
@@ -230,3 +259,23 @@ with tab_del_activity:
             st.markdown(f"🏢 Cliente: #{activity_data_delete["idCliente"].iloc[0]} - {activity_data_delete["nombre_c"].iloc[0]}")
             st.markdown(f"👤 Miembro: #{activity_data_delete["idMiembro"].iloc[0]} - {activity_data_delete["nombre_m"].iloc[0]}")
 
+        with st.popover(f"Eliminar", use_container_width=True):
+                st.write(f"¿Seguro que quieres eliminar a {activity_data_delete["nombre"].iloc[0]}?")
+                if st.button("Si. Estoy Seguro"):
+                    # Generados automaticamente
+                    date_today = datetime.now()
+                    datemodified_del_activity= date_today.strftime("%Y-%m-%d")
+                    modifyby_del_activity = st.session_state['name']
+
+                    state_close_activity, msj_close_activity = bd.cerrar_actividad(id_activity_selected_delete, datemodified_del_activity, datemodified_del_activity, modifyby_del_activity)
+
+                    if state_close_activity == 1:
+                        st.success("Actividad Cerrada")
+                        st.info(msj_close_activity)
+                    else:
+                        st.error("Actividad No Cerrada")
+                        st.info(msj_close_activity)
+                    
+                    message_container.empty()
+                    time.sleep(3)
+                    st.rerun()

@@ -18,7 +18,7 @@ tab_lst_support, tab_ins_support, tab_upd_support, tab_del_support = \
 
 
 with tab_lst_support:
-    supports = bd.consultar("SELECT nombre, telefono, email, direccion, disponibilidad, estatus, notas FROM miembro;")
+    supports = bd.consultar("SELECT * FROM miembro;")
 
     if supports is not None and not supports.empty:
 
@@ -36,10 +36,22 @@ with tab_lst_support:
             # Mostrar la información del support en la columna correspondiente
             with col:
                 with st.container(border=True):
+                    #Vamos a hacer el conteo de actividades realizadas actualmente e historicamente por usuario
+                    activities_by_support = bd.consultar(f"SELECT idMiembro, count(*) as no_actividades FROM actividad WHERE idMiembro = '{support['idMiembro']}';")
+                    activities_by_support_hist = bd.consultar(f"SELECT idMiembro, count(*) as no_actividades FROM actividad_hist WHERE idMiembro='{support['idMiembro']}' GROUP BY idMiembro")
+                    avg_time_support = bd.consultar(f"SELECT AVG(fecha_fin_a - fecha_inicio_a) AS promTiempo FROM actividad_hist WHERE idMiembro={support['idMiembro']};")
+
+                    #Despliegue de información
                     st.markdown(f"## 👤 {support['nombre']}")
                     st.markdown(f"☎️ {support['telefono']}")
                     st.markdown(f"📧 {support['email']}")
                     st.markdown(f"🔤 {support['direccion']}")
+                    if activities_by_support is not None and not activities_by_support.empty:
+                        st.markdown(f''' Atendiendo **:green[{activities_by_support['no_actividades'].iloc[0]}]** actividades''')
+                    if activities_by_support_hist is not None and not activities_by_support_hist.empty:
+                        st.markdown(f''' Ha atendido **:green[{activities_by_support_hist['no_actividades'].iloc[0]}]** actividades''')
+                    if avg_time_support is not None and not avg_time_support.empty and not avg_time_support['promTiempo'].iloc[0] == None:
+                        st.markdown(f'''Avg. Solución (Dias): :green[{avg_time_support['promTiempo'].iloc[0]}]''')
                     if support['notas'] !="":
                         st.markdown(f"🗒️ {support['notas']}")
                     if support['disponibilidad'] == "No Disponible":
