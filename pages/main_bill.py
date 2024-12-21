@@ -20,8 +20,11 @@ tab_lst_bill, tab_ins_bill, tab_upd_bill, tab_del_bill, tab_metric_bill= \
 
 
 with tab_lst_bill:
-    bills = bd.consultar("SELECT f.*, a.idActividad as idA, a.nombre as nombre_a, m.idMiembro as idM, m.nombre as nombre_m FROM factura f INNER JOIN miembro m ON f.idMiembro=m.idMiembro INNER JOIN actividad a ON f.idActividad=a.idActividad;")
-
+    if any(role in ["admin"] for role in st.session_state["roles"]):
+        bills = bd.consultar("SELECT f.*, a.idActividad as idA, a.nombre as nombre_a, m.idMiembro as idM, m.nombre as nombre_m FROM factura f INNER JOIN miembro m ON f.idMiembro=m.idMiembro INNER JOIN actividad a ON f.idActividad=a.idActividad;")
+    elif any(role in ["user"] for role in st.session_state["roles"]):
+        bills = bd.consultar(f"SELECT f.*, a.idActividad as idA, a.nombre as nombre_a, m.idMiembro as idM, m.nombre as nombre_m FROM factura f INNER JOIN miembro m ON f.idMiembro=m.idMiembro INNER JOIN actividad a ON f.idActividad=a.idActividad WHERE m.email='{st.session_state['email']}';")
+    
     if bills is not None and not bills.empty:
 
         # Definir el número de columnas
@@ -97,61 +100,62 @@ with tab_lst_bill:
         st.warning("No existen datos")
 
 
-with tab_metric_bill:
-    
-    activities_metrics_bill = bd.consultar("SELECT fh.idActividad, ah.nombre_a, sum(fh.costo + fh.impuesto) AS total FROM factura_hist fh INNER JOIN actividad_hist ah ON fh.idActividad=ah.idActividad GROUP BY fh.idActividad;")
-    client_metrics_bill = bd.consultar("SELECT ah.idCliente, ah.nombre_c, sum(fh.costo + fh.impuesto) AS total FROM factura_hist fh INNER JOIN actividad_hist ah ON fh.idActividad=ah.idActividad GROUP BY ah.idCliente, ah.nombre_c;")
-    
+if any(role in ["admin"] for role in st.session_state["roles"]):
+    with tab_metric_bill:
+        
+        activities_metrics_bill = bd.consultar("SELECT fh.idActividad, ah.nombre_a, sum(fh.costo + fh.impuesto) AS total FROM factura_hist fh INNER JOIN actividad_hist ah ON fh.idActividad=ah.idActividad GROUP BY fh.idActividad;")
+        client_metrics_bill = bd.consultar("SELECT ah.idCliente, ah.nombre_c, sum(fh.costo + fh.impuesto) AS total FROM factura_hist fh INNER JOIN actividad_hist ah ON fh.idActividad=ah.idActividad GROUP BY ah.idCliente, ah.nombre_c;")
+        
 
-    fig_pie_1 = go.Figure(
-        go.Pie(
-            labels = activities_metrics_bill['nombre_a'] + ' #' + activities_metrics_bill['idActividad'].astype(str),
-            values=activities_metrics_bill['total'],
-            hole=0.4,  # Esto crea el efecto de dona
-            textinfo='label',
-            hoverinfo='label+value',
-            showlegend=False,
-            marker=dict(
-                colors=px.colors.sequential.RdBu
+        fig_pie_1 = go.Figure(
+            go.Pie(
+                labels = activities_metrics_bill['nombre_a'] + ' #' + activities_metrics_bill['idActividad'].astype(str),
+                values=activities_metrics_bill['total'],
+                hole=0.4,  # Esto crea el efecto de dona
+                textinfo='label',
+                hoverinfo='label+value',
+                showlegend=False,
+                marker=dict(
+                    colors=px.colors.sequential.RdBu
+                )
             )
         )
-    )
 
 
-    fig_pie_1.update_layout(title_text="Costo por Actividad",
-                        paper_bgcolor='rgba(0, 0, 0, 0)',  # Fondo del papel transparente
-                        plot_bgcolor='rgba(0, 0, 0, 0)',  # Fondo del gráfico transparente
-                        height = 700,
-                        width = 700)
-    
+        fig_pie_1.update_layout(title_text="Costo por Actividad",
+                            paper_bgcolor='rgba(0, 0, 0, 0)',  # Fondo del papel transparente
+                            plot_bgcolor='rgba(0, 0, 0, 0)',  # Fondo del gráfico transparente
+                            height = 700,
+                            width = 700)
+        
 
-    fig_pie_2 = go.Figure(
-        go.Pie(
-            labels = client_metrics_bill['nombre_c'] + ' #' + client_metrics_bill['idCliente'].astype(str),
-            values=client_metrics_bill['total'],
-            hole=0.4,  # Esto crea el efecto de dona
-            textinfo='label',
-            hoverinfo='label+value',
-            showlegend=False,
-            marker=dict(
-                colors=px.colors.sequential.RdBu_r
+        fig_pie_2 = go.Figure(
+            go.Pie(
+                labels = client_metrics_bill['nombre_c'] + ' #' + client_metrics_bill['idCliente'].astype(str),
+                values=client_metrics_bill['total'],
+                hole=0.4,  # Esto crea el efecto de dona
+                textinfo='label',
+                hoverinfo='label+value',
+                showlegend=False,
+                marker=dict(
+                    colors=px.colors.sequential.RdBu_r
+                )
             )
         )
-    )
 
 
-    fig_pie_2.update_layout(title_text="Costo por Cliente",
-                        paper_bgcolor='rgba(0, 0, 0, 0)',  # Fondo del papel transparente
-                        plot_bgcolor='rgba(0, 0, 0, 0)',  # Fondo del gráfico transparente
-                        height = 700,
-                        width = 700)
-    
-    col1, col2 = st.columns(2)
+        fig_pie_2.update_layout(title_text="Costo por Cliente",
+                            paper_bgcolor='rgba(0, 0, 0, 0)',  # Fondo del papel transparente
+                            plot_bgcolor='rgba(0, 0, 0, 0)',  # Fondo del gráfico transparente
+                            height = 700,
+                            width = 700)
+        
+        col1, col2 = st.columns(2)
 
-    with col1:
-        st.plotly_chart(fig_pie_1, use_container_width=True)
-    with col2:
-        st.plotly_chart(fig_pie_2, use_container_width=True)
+        with col1:
+            st.plotly_chart(fig_pie_1, use_container_width=True)
+        with col2:
+            st.plotly_chart(fig_pie_2, use_container_width=True)
 
 with tab_ins_bill:
     supports_ins_bills = bd.consultar("SELECT idMiembro, nombre FROM miembro;")

@@ -5,13 +5,22 @@ cookie:
 credentials:
   usernames:
     diegorm666:
-      email: mrcubeoner041@gmail.com
+      email: al2202000335@azc.uam.mx
       failed_login_attempts: 0
       logged_in: true
       name: Diego Ruiz
-      password: $2b$12$P5CqIiIXDhU0/Eg50mpDDe54ERNDxB98dACU2QcsxoNaMk9BTO1n2
+      password: $2b$12$oonB2p76NDK7zXuJNdJ7mOTRbMJ2yEE1l3p.emt98dG4TCIBmcYm.
       roles:
       - admin
+    victorreyes:
+      email: victor.reyes@apptec.com.mx
+      first_name: Victor
+      last_name: Reyes Reyes
+      logged_in: false
+      password: $2b$12$6L0.Nz9bGSXyXN.nU63KNuEts.SwISizyYkr7dToIfB4Qef/BRnRq
+      password_hint: Provided
+      roles:
+      - user
 oauth2:
   google:
     client_id: null
@@ -23,5 +32,4 @@ oauth2:
     redirect_uri: null
     tenant_id: null
 pre-authorized:
-  emails:
-  - al2202000335@azc.uam.mx
+  emails: null

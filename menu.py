@@ -1,12 +1,11 @@
 import streamlit as st
 
-
 def authenticated_menu():
     # Show a navigation menu for authenticated users
     st.sidebar.page_link("login.py", label="Cuenta")
     
     # Check if the user's role is in the list of roles
-    if any(role in ["admin", "super-admin"] for role in st.session_state["roles"]):
+    if any(role in ["admin", "user"] for role in st.session_state["roles"]):
         st.sidebar.page_link("pages/main_client.py", label="Clientes")
         st.sidebar.page_link("pages/main_support.py", label="Miembros")
         st.sidebar.page_link("pages/main_resource.py", label="Recursos")

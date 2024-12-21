@@ -3,6 +3,9 @@ from sqlalchemy import create_engine
 import platform
 from sqlalchemy.sql import text
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
+import streamlit as st
+import logic.utilities as ut
 
 # Generar la conexión a la base de datos
 def conectarBase():
@@ -54,7 +57,6 @@ def actualizar(query):
         # Cierra la conexión si fue establecida
         cerrarConexion(connection)
 
-
 # Hacer una consulta de datos
 def consultar(query):
     """Ejecuta una consulta en la base de datos y devuelve los resultados en un DataFrame."""
@@ -101,11 +103,235 @@ def insertar(query):
         # Cierra la conexión si fue establecida
         cerrarConexion(connection)
 
+############################################################### Cliente ###############################################################
+# Se busca hacer transaccional este rollo, para no tener problemas
+
+def insertar_cliente(name, phone, email, address, comments):
+    """
+    Verifica si un cliente existe e inserta uno nuevo si no existe, todo en una transacción.
+    """
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return False,"No se pudo establecer la conexión a la base de datos."
+
+    try:
+        with connection.begin() as transaction:
+            # Verificar si el cliente ya existe
+            query_existe = text(f"""
+                SELECT 1 FROM cliente 
+                WHERE nombre COLLATE utf8_general_ci = :name
+                LIMIT 1;
+            """)
+            result = connection.execute(query_existe, {"name": name}).fetchone()
+
+            if result:
+                return False, "El cliente ya existe en la base de datos."
+
+            # Insertar el nuevo cliente
+            query_insert = text("""
+                INSERT INTO cliente (nombre, telefono, email, direccion, notas)
+                VALUES (:name, :phone, :email, :address, :comments);
+            """)
+            connection.execute(query_insert, {
+                "name": name,
+                "phone": phone,
+                "email": email,
+                "address": address,
+                "comments": comments
+            })
+
+            # Si todo se ejecuta correctamente, se confirma la transacción automáticamente
+            return True,"Cliente agregado"
+
+    except SQLAlchemyError as e:
+        # Si ocurre un error, se revierte automáticamente la transacción
+        print("Error durante la operación:", e)
+        return False, f"Cliente No Agregado. Error durante la operación: {e}"
+
+    finally:
+        cerrarConexion(connection)
+
+def consultar_todos_clientes():
+    """Ejecuta una consulta en la base de datos y devuelve todos los clientes."""
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return "No se pudo establecer la conexión a la base de datos."
+
+    try:
+        df = pd.read_sql("SELECT * FROM cliente", connection)
+        return df
+
+    except Exception as e:
+        print("Error al ejecutar la consulta:", e)
+        msj = f"Error al ejecutar la consulta: {e}"
+        return msj
+
+    finally:
+        # Cerrar la conexión
+        cerrarConexion(connection)
+
+def actualizar_cliente(name, phone, email, address, comments, id_client):
+    """Actualiza una o varias tablas en la base de datos y devuelve un mensaje de éxito o error."""
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return False, "No se pudo establecer la conexión a la base de datos."
+    
+    try:
+        # Ejecuta la consulta de actualización
+        with connection.begin():  # Asegura una transacción
+            connection.execute(text(f"UPDATE cliente SET nombre = '{name}', telefono = '{phone}', email = '{email}', direccion = '{address}', notas = '{comments}' WHERE idCliente = '{id_client}';"))  # Envolver en 'text'
+        msj = "Actualización exitosa."
+        return True, msj
+
+    except Exception as e:
+        print("Error al ejecutar la actualización:", e)
+        msj = f"Error al ejecutar la actualización: {e}"
+        return False, msj
+
+    finally:
+        # Cierra la conexión si fue establecida
+        cerrarConexion(connection)
+
+def eliminar_cliente(id_client_selected):
+    """Verifica si el cliente tiene actividades abiertas. Si no, elimina el cliente."""
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return  False, "No se pudo establecer la conexión a la base de datos."
+
+    try:
+        with connection.begin() as transaction:
+            # Consultar si el cliente tiene actividades abiertas
+            query_actividades = text("""
+                SELECT count(*) as act_abiertas 
+                FROM actividad a 
+                INNER JOIN cliente c ON a.idCliente = c.idCliente 
+                WHERE a.idCliente = :id_cliente;
+            """)
+            result = connection.execute(query_actividades, {"id_cliente": id_client_selected}).fetchone()
+
+            # Verificar si el resultado es un tuple
+            if result:
+                # result[0] es el conteo de actividades
+                if result[0] == 0:
+                    # Eliminar el cliente si no tiene actividades
+                    query_eliminar_cliente = text("""
+                        DELETE FROM cliente WHERE idCliente = :id_cliente;
+                    """)
+                    connection.execute(query_eliminar_cliente, {"id_cliente": id_client_selected})
+
+                    # Confirmar eliminación
+                    return True, f"Cliente con ID #{id_client_selected} eliminado exitosamente."
+                else:
+                    return False,f"Cliente con ID #{id_client_selected} tiene actividades abiertas."
+            else:
+                return False,f"Cliente con ID #{id_client_selected} no encontrado."
+
+    except SQLAlchemyError as e:
+        # Si ocurre un error, se revierte automáticamente la transacción
+        print("Error durante la operación:", e)
+        return False,f"Error durante la operación: {e}"
+
+    finally:
+        cerrarConexion(connection)
+
+############################################################### Recurso ###############################################################
+# Se busca hacer transaccional este rollo, para no tener problemas
+def consultar_recursos():
+    """Ejecuta una consulta en la base de datos y devuelve todos las actividades de acuerdo al miembro."""
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return "No se pudo establecer la conexión a la base de datos."
+
+    try:
+        df = pd.read_sql("SELECT * FROM recurso;", connection)
+        return df
+
+    except Exception as e:
+        print("Error al ejecutar la consulta:", e)
+        msj = f"Error al ejecutar la consulta: {e}"
+        return msj
+
+    finally:
+        # Cerrar la conexión
+        cerrarConexion(connection)
+
+def insertar_recurso(serial, name, description, category, life, comments):
+    """
+    Verifica si un recurso existe e inserta uno nuevo si no existe, todo en una transacción.
+    """
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return False,"No se pudo establecer la conexión a la base de datos."
+
+    try:
+        with connection.begin() as transaction:
+            # Verificar si el cliente ya existe
+            query_existe = text(f"""
+                SELECT 1 FROM recurso 
+                WHERE no_serie = :serial
+                LIMIT 1;
+            """)
+            result = connection.execute(query_existe, {"serial": serial}).fetchone()
+
+            if result:
+                return False, "Recurso No Agregado.El recruso ya existe en la base de datos."
+
+            # Insertar el nuevo cliente
+            query_insert = text("""
+                INSERT INTO recurso (nombre, tipo, descripcion, categoria, no_serie, estado_recurso, vida_util, fecha_ingreso, notas ) 
+                VALUES (:name, :type, :description, :category, :serial, 'En Stock', :life, :today , :comments);;
+                """)
+            
+            connection.execute(query_insert, {
+                "name": name,
+                "type": type,
+                "description": description,
+                "category": category,
+                "serial": serial,
+                "life": life,
+                "today": ut.get_today_date(),
+                "comments": comments
+            })
+
+            # Si todo se ejecuta correctamente, se confirma la transacción automáticamente
+            return True,"Recurso agregado"
+
+    except SQLAlchemyError as e:
+        # Si ocurre un error, se revierte automáticamente la transacción
+        print("Error durante la operación:", e)
+        return False, f"Recurso No Agregado. Error durante la operación: {e}"
+
+    finally:
+        cerrarConexion(connection)
+
+############################################################### General ############################################################### 
 def consultar_nombre_insensible(nombre, base_datos):
     """Consulta si hay un nombre igual en la base de datos, insensible a mayúsculas y minúsculas."""
     # Asegurarse de que el nombre esté en minúsculas para la comparación
     query = f"""
     SELECT * FROM erp.{base_datos}
+    WHERE nombre COLLATE utf8_general_ci = '{nombre}';
+    """
+    
+    # Ejecutar la consulta usando la función consultar
+    result = consultar(query)
+    
+    # Verificar si se encontraron resultados
+    if isinstance(result, pd.DataFrame) and not result.empty:
+        return True  # Se encontró el nombre
+    return False  # No se encontró el nombre
+
+def existe_cliente(nombre):
+    """Consulta si hay un nombre igual en la base de datos, insensible a mayúsculas y minúsculas."""
+    # Asegurarse de que el nombre esté en minúsculas para la comparación
+    query = f"""
+    SELECT * FROM erp.cliente
     WHERE nombre COLLATE utf8_general_ci = '{nombre}';
     """
     

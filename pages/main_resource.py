@@ -4,6 +4,7 @@ import time
 from menu import menu_with_redirect
 import logic.bd as bd
 from datetime import datetime
+import logic.utilities as ut
 
 
 
@@ -17,7 +18,62 @@ st.markdown("# 🔧 Recursos")
 tab_lst_resource, tab_asign_resource,tab_ins_resource, tab_upd_resource, tab_del_resource, tab_new_resource = \
       st.tabs(["Listar Recursos","Asignar Recursos","Agregar Recurso", "Actualizar Recurso", "Eliminar Recurso", "Petición Recurso"])
 
+with tab_lst_resource:
+    if any(role in ["admin", "user"] for role in st.session_state["roles"]):
+        resources = bd.consultar_recursos()
+        if resources is not None and not resources.empty:
 
+            # Definir el número de columnas
+            num_cols = 2
+            cols = st.columns(num_cols)
+            
+            # Inicializar el índice para repartir a las columnas
+            index = 0
+
+            # Iterar sobre los resources en el DataFrame
+            for _, resource in resources.iterrows():
+                col = cols[index % num_cols]  # Alterna entre las columnas (0 y 1)
+                
+                # Mostrar la información del resource en la columna correspondiente
+                with col:
+                    with st.container(border=True):
+                        st.markdown(f"## 🔧 {resource['nombre']}")
+                        if resource['tipo'] == "Herramienta":
+                            st.markdown(f"⚒️ Tipo: {resource['tipo']}")
+                        else:
+                            st.markdown(f"🖥️ Tipo: {resource['tipo']}")
+                        st.markdown(f"🔠 Descripción: {resource['descripcion']}")
+                        st.markdown(f"♟️ Categoria: {resource['categoria']}")
+                        st.markdown(f"#️⃣ No. Serie: {resource['no_serie']}")
+                        
+
+                        if resource['vida_util'] in ["1 Año", "5 Años","10 Años"]:
+                            dias_vida, dias_totales = ut.get_total_days_life(resource['vida_util'], resource['fecha_ingreso'])    
+                            st.markdown(f" ⏲️ Vida: **{dias_vida}/{dias_totales}**")
+
+                            if dias_vida > dias_totales:
+                                st.markdown(f'''#### :red[Resurtir en Inventario]''')
+                        else:
+                            st.markdown(f"⏲️ Vida Útil: {resource['vida_util']}")
+
+                        if resource['notas'] !="":
+                            st.markdown(f"🗒️ Notas: {resource['notas']}")
+                        
+                        if resource['estado_recurso'] == "En Stock":
+                            st.markdown(f'''### ✅ :green[{resource['estado_recurso']}]''')
+                        else:
+                            st.markdown(f'''### ❌ :orange[{resource['estado_recurso']}]''')
+                        
+                
+                # Actualizar el índice para alternar entre las columnas
+                index += 1
+
+        else:
+            st.warning("No existen datos")
+    else:
+        st.info("No tienes permisos para realizar esta acción, Contacta al administrador")
+
+# Este falta
 with tab_asign_resource: 
     resources_to_asign = bd.consultar("SELECT * FROM recurso WHERE estado_recurso = 'En Stock'")
     activities_to_assign = bd.consultar("SELECT * FROM actividad;")
@@ -117,109 +173,44 @@ with tab_asign_resource:
     else:
         st.warning("No hay recursos o actividades para mostrar.")
 
-with tab_lst_resource:
-    resources = bd.consultar("SELECT nombre, tipo, descripcion, categoria, no_serie, estado_recurso, vida_util, fecha_ingreso, notas FROM recurso;")
-
-    if resources is not None and not resources.empty:
-
-        # Definir el número de columnas
-        num_cols = 2
-        cols = st.columns(num_cols)
-        
-        # Inicializar el índice para repartir a las columnas
-        index = 0
-
-        # Iterar sobre los resources en el DataFrame
-        for _, resource in resources.iterrows():
-            col = cols[index % num_cols]  # Alterna entre las columnas (0 y 1)
-            
-            # Mostrar la información del resource en la columna correspondiente
-            with col:
-                with st.container(border=True):
-                    st.markdown(f"## 🔧 {resource['nombre']}")
-                    if resource['tipo'] == "Herramienta":
-                        st.markdown(f"⚒️ Tipo: {resource['tipo']}")
-                    else:
-                        st.markdown(f"🖥️ Tipo: {resource['tipo']}")
-                    st.markdown(f"🔠 Descripción: {resource['descripcion']}")
-                    st.markdown(f"♟️ Categoria: {resource['categoria']}")
-                    st.markdown(f"#️⃣ No. Serie: {resource['no_serie']}")
-                    
-
-                    if resource['vida_util'] in ["1 Año", "5 Años","10 Años"]:
-                        if resource['vida_util'] == "10 Años":
-                            dias_totales = 3650
-                        elif resource['vida_util'] == "5 Años":
-                            dias_totales = 1825
-                        elif resource['vida_util'] == "1 Año":
-                            dias_totales = 365
-                            
-                        dias_vida = (datetime.now().date() - resource['fecha_ingreso']).days
-                        st.markdown(f" ⏲️ Vida: **{dias_vida}/{dias_totales}**")
-
-                        if dias_vida > dias_totales:
-                            st.markdown(f'''#### :red[Resurtir en Inventario]''')
-                    else:
-                        st.markdown(f"⏲️ Vida Útil: {resource['vida_util']}")
-
-                    if resource['notas'] !="":
-                        st.markdown(f"🗒️ Notas: {resource['notas']}")
-                    
-                    if resource['estado_recurso'] == "En Stock":
-                        st.markdown(f'''### ✅ :green[{resource['estado_recurso']}]''')
-                    else:
-                        st.markdown(f'''### ❌ :orange[{resource['estado_recurso']}]''')
-                    
-            
-            # Actualizar el índice para alternar entre las columnas
-            index += 1
-
-    else:
-        st.warning("No existen datos")
-
-
 with tab_ins_resource:
-    with st.form("insert_resource", clear_on_submit=True):
-        # Entradas del formulario
-        name_ins_resource = st.text_input("Nombre*: ", placeholder="Llave")
-        type_ins_resource = st.selectbox("Tipo*: ", ["Herramienta", "Material"])
-        description_ins_resource = st.text_input("Descripción*: ", placeholder="Llave Allen 3/4")
-        category_ins_resource = st.text_input("Categoria*: ", placeholder="Mecánica")
-        serialnumber_ins_resource = st.text_input("No. Serie", placeholder="ALL15313")
-        life_ins_resource = st.selectbox("Vida Útil", ["1 Vez", "1 Año", "5 Años","10 Años"])
-        comments_ins_resource = st.text_area("Notas Adicionales: ", placeholder="Agrega tus comentarios")
-        
-        # Indicador de campos obligatorios
-        st.markdown("*Campos Obligatorios")
-        
-        # Botón de envío
-        submit_insert_resource = st.form_submit_button("Agregar")
+    if any(role in ["admin"] for role in st.session_state["roles"]):
+        with st.form("insert_resource", clear_on_submit=True):
+            # Entradas del formulario
+            name_ins_resource = st.text_input("Nombre*: ", placeholder="Llave")
+            type_ins_resource = st.selectbox("Tipo*: ", ["Herramienta", "Material"])
+            description_ins_resource = st.text_input("Descripción*: ", placeholder="Llave Allen 3/4")
+            category_ins_resource = st.text_input("Categoria*: ", placeholder="Mecánica")
+            serialnumber_ins_resource = st.text_input("No. Serie", placeholder="ALL15313")
+            life_ins_resource = st.selectbox("Vida Útil", ["1 Vez", "1 Año", "5 Años","10 Años"])
+            comments_ins_resource = st.text_area("Notas Adicionales: ", placeholder="Agrega tus comentarios")
+            st.markdown("*Campos Obligatorios")
+            
+            # Botón de envío
+            submit_insert_resource = st.form_submit_button("Agregar")
 
-        message_container = st.empty()
+            message_container = st.empty()
 
-        # Generacion de campos automaticos: 
-        datetoday = datetime.now()
-        dates_ins_resource = datetoday.strftime("%Y-%m-%d")
-
-
-        if submit_insert_resource:
-            if not name_ins_resource.strip() or not type_ins_resource.strip() or not description_ins_resource.strip()\
-            or not category_ins_resource.strip() or not serialnumber_ins_resource.strip():
-                st.error("Recurso No Agregado")
-                st.info("Llene todos los campos obligatorios")
-            else:
-                query_insert_resource = f"INSERT INTO recurso (nombre, tipo, descripcion, categoria, no_serie, estado_recurso, vida_util, fecha_ingreso, notas ) VALUES ('{name_ins_resource}', '{type_ins_resource}', '{description_ins_resource}', '{category_ins_resource}', '{serialnumber_ins_resource}', 'En Stock', '{life_ins_resource}', '{dates_ins_resource}' ,'{comments_ins_resource}');"
-                bd.insertar(query_insert_resource)
-                st.success("Recurso Agregado")
-                st.info(f"{name_ins_resource} -- {type_ins_resource} -- {description_ins_resource} -- {category_ins_resource} -- {serialnumber_ins_resource} -- {life_ins_resource} -- En Stock -- {comments_ins_resource}")
-                
-            # Para que se limpien los mensajes
-            time.sleep(3)
-            message_container.empty()
-            st.rerun()
-
+            if submit_insert_resource:
+                if not name_ins_resource.strip() or not type_ins_resource.strip() or not description_ins_resource.strip() or not category_ins_resource.strip() or not serialnumber_ins_resource.strip():
+                    st.error("Recurso No Agregado")
+                    st.info("Llene todos los campos obligatorios")
+                else:
+                    state_ins_resource, msj_ins_resource = bd.insertar_recurso({serialnumber_ins_resource},{name_ins_resource},{description_ins_resource}, {category_ins_resource}, {life_ins_resource},{comments_ins_resource})
+                    if state_ins_resource:
+                        st.success(msj_ins_resource)
+                        st.info(f"{name_ins_resource} -- {type_ins_resource} -- {description_ins_resource} -- {category_ins_resource} -- {serialnumber_ins_resource} -- {life_ins_resource} -- En Stock -- {comments_ins_resource}")
+                    else:
+                        st.error(msj_ins_resource)
+                time.sleep(3)
+                message_container.empty()
+                st.rerun()
+    else:
+        st.info("No tienes permisos para realizar esta acción, Contacta al administrador")
+    
 with tab_upd_resource:
-    resources_available = bd.consultar("SELECT * FROM recurso;")
+    
+    resources_available = bd.consultar_recursos()
     
     if resources_available is not None:
         combined_resources = [f"#{row['idRecurso']} - {row['nombre']}" for index, row in resources_available.iterrows()]
