@@ -104,7 +104,26 @@ def insertar(query):
         cerrarConexion(connection)
 
 ############################################################### Cliente ###############################################################
-# Se busca hacer transaccional este rollo, para no tener problemas
+# Listo
+def consultar_todos_clientes():
+    """Ejecuta una consulta en la base de datos y devuelve todos los clientes."""
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return "No se pudo establecer la conexión a la base de datos."
+
+    try:
+        df = pd.read_sql("SELECT * FROM cliente", connection)
+        return df
+
+    except Exception as e:
+        print("Error al ejecutar la consulta:", e)
+        msj = f"Error al ejecutar la consulta: {e}"
+        return msj
+
+    finally:
+        # Cerrar la conexión
+        cerrarConexion(connection)
 
 def insertar_cliente(name, phone, email, address, comments):
     """
@@ -152,37 +171,35 @@ def insertar_cliente(name, phone, email, address, comments):
     finally:
         cerrarConexion(connection)
 
-def consultar_todos_clientes():
-    """Ejecuta una consulta en la base de datos y devuelve todos los clientes."""
-    connection = conectarBase()
-    if connection is None:
-        print("No se pudo establecer la conexión a la base de datos.")
-        return "No se pudo establecer la conexión a la base de datos."
-
-    try:
-        df = pd.read_sql("SELECT * FROM cliente", connection)
-        return df
-
-    except Exception as e:
-        print("Error al ejecutar la consulta:", e)
-        msj = f"Error al ejecutar la consulta: {e}"
-        return msj
-
-    finally:
-        # Cerrar la conexión
-        cerrarConexion(connection)
-
 def actualizar_cliente(name, phone, email, address, comments, id_client):
-    """Actualiza una o varias tablas en la base de datos y devuelve un mensaje de éxito o error."""
+    """Actualiza un cliente en la base de datos dentro de una transacción."""
     connection = conectarBase()
     if connection is None:
         print("No se pudo establecer la conexión a la base de datos.")
         return False, "No se pudo establecer la conexión a la base de datos."
     
     try:
-        # Ejecuta la consulta de actualización
-        with connection.begin():  # Asegura una transacción
-            connection.execute(text(f"UPDATE cliente SET nombre = '{name}', telefono = '{phone}', email = '{email}', direccion = '{address}', notas = '{comments}' WHERE idCliente = '{id_client}';"))  # Envolver en 'text'
+        # Iniciar transacción
+        with connection.begin() as transaction:
+            query = text("""
+                UPDATE cliente 
+                SET nombre = :name, 
+                    telefono = :phone, 
+                    email = :email, 
+                    direccion = :address, 
+                    notas = :comments 
+                WHERE idCliente = :id_client;
+            """)
+            
+            connection.execute(query, {
+                "name": name,
+                "phone": phone,
+                "email": email,
+                "address": address,
+                "comments": comments,
+                "id_client": id_client,
+            })
+
         msj = "Actualización exitosa."
         return True, msj
 
@@ -239,9 +256,9 @@ def eliminar_cliente(id_client_selected):
         cerrarConexion(connection)
 
 ############################################################### Recurso ###############################################################
-# Se busca hacer transaccional este rollo, para no tener problemas
+# Listo
 def consultar_recursos():
-    """Ejecuta una consulta en la base de datos y devuelve todos las actividades de acuerdo al miembro."""
+    """Ejecuta una consulta en la base de datos y devuelve todos los recursos."""
     connection = conectarBase()
     if connection is None:
         print("No se pudo establecer la conexión a la base de datos.")
@@ -258,6 +275,128 @@ def consultar_recursos():
 
     finally:
         # Cerrar la conexión
+        cerrarConexion(connection)
+
+def consultar_recursos_disponible():
+    """Ejecuta una consulta en la base de datos y devuelve todos los recursos con estado_recurso = En Stock."""
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return "No se pudo establecer la conexión a la base de datos."
+
+    try:
+        df = pd.read_sql("SELECT * FROM recurso WHERE estado_recurso = 'En Stock';", connection)
+        return df
+
+    except Exception as e:
+        print("Error al ejecutar la consulta:", e)
+        msj = f"Error al ejecutar la consulta: {e}"
+        return msj
+
+    finally:
+        # Cerrar la conexión
+        cerrarConexion(connection)
+
+def recursos_asginados_a_actividad(id_activity):
+    """Ejecuta una consulta en la base de datos y devuelve todos los recursos asignados a una actividad."""
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return "No se pudo establecer la conexión a la base de datos."
+
+    try:
+        df = pd.read_sql(f"SELECT r.idRecurso, r.nombre FROM actividad_has_recurso ahr INNER JOIN recurso r ON r.idRecurso = ahr.idRecurso INNER JOIN actividad a ON a.idActividad = ahr.idActividad WHERE ahr.idActividad = '{id_activity}'", connection)
+        return df
+
+    except Exception as e:
+        print("Error al ejecutar la consulta:", e)
+        msj = f"Error al ejecutar la consulta: {e}"
+        return msj
+
+    finally:
+        # Cerrar la conexión
+        cerrarConexion(connection)
+
+def desvincular_recurso(id_activity, id_resource):
+    """
+    Realiza una transacción para eliminar una asignación en 'actividad_has_recurso'
+    y actualizar el estado de un recurso a 'En Stock'.
+    """
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return False, "No se pudo establecer la conexión a la base de datos."
+
+    try:
+        with connection.begin() as transaction:
+            # Eliminar la relación de la actividad con el recurso
+            query_eliminar = text("""
+                DELETE FROM actividad_has_recurso 
+                WHERE idActividad = :id_actividad AND idRecurso = :id_recurso;
+            """)
+            connection.execute(query_eliminar, {
+                "id_actividad": id_activity,
+                "id_recurso": id_resource
+            })
+
+            # Actualizar el estado del recurso a 'En Stock'
+            query_actualizar = text("""
+                UPDATE recurso 
+                SET estado_recurso = 'En Stock' 
+                WHERE idRecurso = :id_recurso;
+            """)
+            connection.execute(query_actualizar, {"id_recurso": id_resource})
+
+            # Confirmar éxito
+            return True, f"Recurso con ID #{id_resource} desvinculado de actividad #{id_activity} y actualizado a 'En Stock'."
+
+    except SQLAlchemyError as e:
+        # Si ocurre un error, la transacción se revierte automáticamente
+        print("Error durante la operación:", e)
+        return False, f"Error durante la operación: {e}"
+
+    finally:
+        cerrarConexion(connection)
+
+def vincular_recurso(id_activity, id_resource):
+    """
+    Realiza una transacción para asignar un recurso a una actividad
+    y actualizar el estado del recurso a 'En Uso'.
+    """
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return False, "No se pudo establecer la conexión a la base de datos."
+
+    try:
+        with connection.begin() as transaction:
+            # Insertar la relación entre actividad y recurso
+            query_insertar = text("""
+                INSERT INTO actividad_has_recurso (idActividad, idRecurso)
+                VALUES (:id_actividad, :id_recurso);
+            """)
+            connection.execute(query_insertar, {
+                "id_actividad": id_activity,
+                "id_recurso": id_resource
+            })
+
+            # Actualizar el estado del recurso a 'En Uso'
+            query_actualizar = text("""
+                UPDATE recurso 
+                SET estado_recurso = 'En Uso'
+                WHERE idRecurso = :id_recurso;
+            """)
+            connection.execute(query_actualizar, {"id_recurso": id_resource})
+
+            # Confirmar éxito
+            return True, f"Recurso #{id_resource} asignado correctamente a la actividad #{id_activity}."
+
+    except SQLAlchemyError as e:
+        # Si ocurre un error, la transacción se revierte automáticamente
+        print("Error durante la operación:", e)
+        return False, f"Error durante la operación: {e}"
+
+    finally:
         cerrarConexion(connection)
 
 def insertar_recurso(serial, name, description, category, life, comments):
@@ -310,6 +449,527 @@ def insertar_recurso(serial, name, description, category, life, comments):
     finally:
         cerrarConexion(connection)
 
+def actualizar_recurso(name, type, description, category, serial_number, life, state, comments, id_resource_selected):
+    """Actualiza un recurso en la base de datos dentro de una transacción."""
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return False, "No se pudo establecer la conexión a la base de datos."
+    
+    try:
+        # Iniciar transacción
+        with connection.begin() as transaction:
+            query = text("""
+                UPDATE recurso 
+                SET nombre = :name, 
+                    tipo = :type, 
+                    descripcion = :description, 
+                    categoria = :category, 
+                    no_serie = :serial_number, 
+                    vida_util = :life, 
+                    estado_recurso = :state, 
+                    notas = :comments 
+                WHERE idRecurso = :id_resource_selected;
+            """)
+
+            connection.execute(query, {
+                "name": name,
+                "type": type,
+                "description": description,
+                "category": category,
+                "serial_number": serial_number,
+                "life": life,
+                "state": state,
+                "comments": comments,
+                "id_resource_selected": id_resource_selected,
+            })
+
+        msj = "Actualización exitosa."
+        return True, msj
+
+    except Exception as e:
+        print("Error al ejecutar la actualización:", e)
+        msj = f"Error al ejecutar la actualización: {e}"
+        return False, msj
+
+    finally:
+        # Cierra la conexión si fue establecida
+        cerrarConexion(connection)
+
+def eliminar_recurso(id_resource):
+    """Verifica si el recurso está asociado a actividades. Si no, elimina el recurso."""
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return False, "No se pudo establecer la conexión a la base de datos."
+
+    try:
+        with connection.begin() as transaction:
+            # Consultar si el recurso está asociado a actividades
+            query_actividades = text("""
+                SELECT count(*) as act_abiertas 
+                FROM actividad_has_recurso a 
+                WHERE a.idRecurso = :id_resource;
+            """)
+            result = connection.execute(query_actividades, {"id_resource": id_resource}).fetchone()
+
+            # Verificar si el resultado es válido y el recurso tiene actividades asociadas
+            if result and result[0] > 0:
+                return False, f"Recurso con ID #{id_resource} está asociado a actividades y no puede ser eliminado."
+            
+            # Si no hay actividades asociadas, proceder a eliminar el recurso
+            query_eliminar_recurso = text("""
+                DELETE FROM recurso WHERE idRecurso = :id_resource;
+            """)
+            connection.execute(query_eliminar_recurso, {"id_resource": id_resource})
+
+            # Confirmar eliminación
+            return True, f"Recurso con ID #{id_resource} eliminado exitosamente."
+
+    except SQLAlchemyError as e:
+        # Manejar errores durante la operación
+        print("Error durante la operación:", e)
+        return False, f"Error durante la operación: {e}"
+
+    finally:
+        cerrarConexion(connection)
+
+def consultar_peticiones_recursos(type):
+    """Ejecuta una consulta en la base de datos y devuelve todos las peticiones de recursos."""
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return "No se pudo establecer la conexión a la base de datos."
+
+    try:
+        if type==0:
+            df = pd.read_sql("SELECT pnr.*, m.nombre as nombre_m FROM peticion_nuevo_recurso pnr INNER JOIN miembro m ON m.idMiembro=pnr.idMiembro;", connection)
+            return df
+        if type==1:
+            df = pd.read_sql("SELECT * FROM peticion_nuevo_recurso;", connection)
+            return df
+    except Exception as e:
+        print("Error al ejecutar la consulta:", e)
+        msj = f"Error al ejecutar la consulta: {e}"
+        return msj
+
+    finally:
+        # Cerrar la conexión
+        cerrarConexion(connection)
+
+def consultar_peticiones_por_id(id_miembro):
+    """Ejecuta una consulta en la base de datos y devuelve todos las peticciones de recursos, para un miembro."""
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return "No se pudo establecer la conexión a la base de datos."
+
+    try:
+        df = pd.read_sql(f"SELECT * FROM peticion_nuevo_recurso WHERE idMiembro='{id_miembro}';", connection)
+        return df
+    except Exception as e:
+        print("Error al ejecutar la consulta:", e)
+        msj = f"Error al ejecutar la consulta: {e}"
+        return msj
+
+    finally:
+        # Cerrar la conexión
+        cerrarConexion(connection)
+
+def insertar_peticion_nuevo_recurso(name_new_resource, type_new_resource, description_new_resource, date_new_resource, quantity_new_resource, state_new_resource, comments_ins_resource, id_support_ins):
+    """
+    Inserta una nueva petición de recurso en la base de datos utilizando una transacción.
+    """
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return False, "No se pudo establecer la conexión a la base de datos."
+
+    try:
+        # Iniciar una transacción
+        with connection.begin() as transaction:
+            query = text("""
+                INSERT INTO peticion_nuevo_recurso 
+                (nombre, tipo, descripcion, fecha_peticion, cantidad, estado_peticion, notas, idMiembro) 
+                VALUES (:name, :type, :description, :date, :quantity, :state, :comments, :id_member);
+            """)
+
+            connection.execute(query, {
+                "name": name_new_resource,
+                "type": type_new_resource,
+                "description": description_new_resource,
+                "date": date_new_resource,
+                "quantity": quantity_new_resource,
+                "state": state_new_resource,
+                "comments": comments_ins_resource,
+                "id_member": id_support_ins,
+            })
+
+        # Si todo va bien, la transacción se confirma automáticamente al salir del bloque `with`
+        return True, "Inserción de la petición de recurso realizada con éxito."
+
+    except Exception as e:
+        # Si ocurre un error, la transacción se revierte automáticamente
+        print("Error al insertar la petición de recurso:", e)
+        return False, f"Error al insertar la petición de recurso: {e}"
+
+    finally:
+        # Cerrar la conexión
+        cerrarConexion(connection)
+
+def eliminar_peticion_nuevo_recurso(new_id_resource_selected):
+    """
+    Elimina una petición de nuevo recurso en la base de datos.
+    """
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return False, "No se pudo establecer la conexión a la base de datos."
+
+    try:
+        with connection.begin() as transaction:
+            query = text("""
+                DELETE FROM peticion_nuevo_recurso WHERE idNuevoRecurso = :id_resource;
+            """)
+            result = connection.execute(query, {"id_resource": new_id_resource_selected})
+
+            if result.rowcount > 0:  # Verificar si se eliminó alguna fila
+                return True, f"Petición con ID #{new_id_resource_selected} eliminada exitosamente."
+            else:
+                return False, f"No se encontró una petición con ID #{new_id_resource_selected}."
+
+    except Exception as e:
+        print("Error al eliminar la petición de recurso:", e)
+        return False, f"Error al eliminar la petición de recurso: {e}"
+
+    finally:
+        cerrarConexion(connection)
+
+
+############################################################### Actividad ###############################################################
+# Se busca hacer transaccional este rollo, para no tener problemas
+
+def consultar_actividades():
+    """Ejecuta una consulta en la base de datos y devuelve todos las actividades."""
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return "No se pudo establecer la conexión a la base de datos."
+
+    try:
+        df = pd.read_sql("SELECT * FROM actividad", connection)
+        return df
+
+    except Exception as e:
+        print("Error al ejecutar la consulta:", e)
+        msj = f"Error al ejecutar la consulta: {e}"
+        return msj
+
+    finally:
+        # Cerrar la conexión
+        cerrarConexion(connection)
+
+#def insertar_cliente(name, phone, email, address, comments):
+    """
+    Verifica si un cliente existe e inserta uno nuevo si no existe, todo en una transacción.
+    """
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return False,"No se pudo establecer la conexión a la base de datos."
+
+    try:
+        with connection.begin() as transaction:
+            # Verificar si el cliente ya existe
+            query_existe = text(f"""
+                SELECT 1 FROM cliente 
+                WHERE nombre COLLATE utf8_general_ci = :name
+                LIMIT 1;
+            """)
+            result = connection.execute(query_existe, {"name": name}).fetchone()
+
+            if result:
+                return False, "El cliente ya existe en la base de datos."
+
+            # Insertar el nuevo cliente
+            query_insert = text("""
+                INSERT INTO cliente (nombre, telefono, email, direccion, notas)
+                VALUES (:name, :phone, :email, :address, :comments);
+            """)
+            connection.execute(query_insert, {
+                "name": name,
+                "phone": phone,
+                "email": email,
+                "address": address,
+                "comments": comments
+            })
+
+            # Si todo se ejecuta correctamente, se confirma la transacción automáticamente
+            return True,"Cliente agregado"
+
+    except SQLAlchemyError as e:
+        # Si ocurre un error, se revierte automáticamente la transacción
+        print("Error durante la operación:", e)
+        return False, f"Cliente No Agregado. Error durante la operación: {e}"
+
+    finally:
+        cerrarConexion(connection)
+
+#def actualizar_cliente(name, phone, email, address, comments, id_client):
+    """Actualiza una o varias tablas en la base de datos y devuelve un mensaje de éxito o error."""
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return False, "No se pudo establecer la conexión a la base de datos."
+    
+    try:
+        # Ejecuta la consulta de actualización
+        with connection.begin():  # Asegura una transacción
+            connection.execute(text(f"UPDATE cliente SET nombre = '{name}', telefono = '{phone}', email = '{email}', direccion = '{address}', notas = '{comments}' WHERE idCliente = '{id_client}';"))  # Envolver en 'text'
+        msj = "Actualización exitosa."
+        return True, msj
+
+    except Exception as e:
+        print("Error al ejecutar la actualización:", e)
+        msj = f"Error al ejecutar la actualización: {e}"
+        return False, msj
+
+    finally:
+        # Cierra la conexión si fue establecida
+        cerrarConexion(connection)
+
+#def eliminar_cliente(id_client_selected):
+    """Verifica si el cliente tiene actividades abiertas. Si no, elimina el cliente."""
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return  False, "No se pudo establecer la conexión a la base de datos."
+
+    try:
+        with connection.begin() as transaction:
+            # Consultar si el cliente tiene actividades abiertas
+            query_actividades = text("""
+                SELECT count(*) as act_abiertas 
+                FROM actividad a 
+                INNER JOIN cliente c ON a.idCliente = c.idCliente 
+                WHERE a.idCliente = :id_cliente;
+            """)
+            result = connection.execute(query_actividades, {"id_cliente": id_client_selected}).fetchone()
+
+            # Verificar si el resultado es un tuple
+            if result:
+                # result[0] es el conteo de actividades
+                if result[0] == 0:
+                    # Eliminar el cliente si no tiene actividades
+                    query_eliminar_cliente = text("""
+                        DELETE FROM cliente WHERE idCliente = :id_cliente;
+                    """)
+                    connection.execute(query_eliminar_cliente, {"id_cliente": id_client_selected})
+
+                    # Confirmar eliminación
+                    return True, f"Cliente con ID #{id_client_selected} eliminado exitosamente."
+                else:
+                    return False,f"Cliente con ID #{id_client_selected} tiene actividades abiertas."
+            else:
+                return False,f"Cliente con ID #{id_client_selected} no encontrado."
+
+    except SQLAlchemyError as e:
+        # Si ocurre un error, se revierte automáticamente la transacción
+        print("Error durante la operación:", e)
+        return False,f"Error durante la operación: {e}"
+
+    finally:
+        cerrarConexion(connection)
+
+
+############################################################### Miembro ###############################################################
+# Se busca hacer transaccional este rollo, para no tener problemas
+
+def consultar_miembros(type):
+    """Ejecuta una consulta en la base de datos y devuelve todos los miembros."""
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return "No se pudo establecer la conexión a la base de datos."
+
+    try:
+        if type==0:
+            df = pd.read_sql("SELECT * FROM miembro;", connection)
+            return df
+        elif type==1:
+            df = pd.read_sql("SELECT idMiembro, nombre FROM miembro;", connection)
+            return df
+
+    except Exception as e:
+        print("Error al ejecutar la consulta:", e)
+        msj = f"Error al ejecutar la consulta: {e}"
+        return msj
+
+    finally:
+        # Cerrar la conexión
+        cerrarConexion(connection)
+
+def consultar_id_email(email):
+    """Devuelve el ID del miembro de acuerdo al email, o None si no se encuentra."""
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return False, "No se pudo establecer la conexión a la base de datos."
+
+    try:
+        query = text("SELECT idMiembro FROM miembro WHERE email = :email LIMIT 1;")
+        result = connection.execute(query, {"email": email}).fetchone()
+
+        if result is not None:
+            # Retornar el ID encontrado
+            return True, result[0]
+        else:
+            # Retornar None si no se encontró el email
+            return False, "No se encontró un miembro con ese email."
+
+    except Exception as e:
+        print("Error al ejecutar la consulta:", e)
+        return False, f"Error al ejecutar la consulta: {e}"
+
+    finally:
+        cerrarConexion(connection)
+
+def obtener_actividades_y_promedio(support_id):
+    """Obtiene el número de actividades por soporte, actividades históricas y el tiempo promedio de actividades históricas, devolviendo tres DataFrames."""
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return False, "No se pudo establecer la conexión a la base de datos."
+    
+    try:
+        # Iniciar transacción
+        with connection.begin() as transaction:
+            # Consulta 1: Actividades por soporte
+            query_actividades = text("""
+                SELECT idMiembro, count(*) as no_actividades 
+                FROM actividad 
+                WHERE idMiembro = :support_id
+                GROUP BY idMiembro;
+            """)
+            activities_by_support = pd.read_sql(query_actividades, connection, params={"support_id": support_id})
+
+            # Consulta 2: Actividades históricas por soporte
+            query_actividades_hist = text("""
+                SELECT idMiembro, count(*) as no_actividades 
+                FROM actividad_hist 
+                WHERE idMiembro = :support_id 
+                GROUP BY idMiembro;
+            """)
+            activities_by_support_hist = pd.read_sql(query_actividades_hist, connection, params={"support_id": support_id})
+
+            # Consulta 3: Promedio de tiempo de las actividades históricas
+            query_avg_time_support = text("""
+                SELECT AVG(fecha_fin_a - fecha_inicio_a) AS promTiempo 
+                FROM actividad_hist 
+                WHERE idMiembro = :support_id;
+            """)
+            avg_time_support = pd.read_sql(query_avg_time_support, connection, params={"support_id": support_id})
+
+        return True, activities_by_support, activities_by_support_hist, avg_time_support
+
+    except Exception as e:
+        print("Error al ejecutar las consultas:", e)
+        msj = f"Error al ejecutar las consultas: {e}"
+        return False, msj
+
+    finally:
+        # Cierra la conexión si fue establecida
+        cerrarConexion(connection)
+
+def insertar_miembro(name_ins_support, phone_ins_support, email_ins_support, address_ins_support, disponibility_ins_support, status_ins_support, comments_ins_support):
+    """Inserta un nuevo miembro en la base de datos dentro de una transacción."""
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return False, "No se pudo establecer la conexión a la base de datos."
+    
+    try:
+        # Inicia la transacción
+        with connection.begin():  # Transacción
+            # Consulta SQL para insertar el nuevo miembro
+            query = text("""
+                INSERT INTO miembro (nombre, telefono, email, direccion, disponibilidad, estatus, notas) 
+                VALUES (:name, :phone, :email, :address, :disponibility, :status, :comments);
+            """)
+
+            # Ejecutar la consulta
+            connection.execute(query, {
+                "name": name_ins_support,
+                "phone": phone_ins_support,
+                "email": email_ins_support,
+                "address": address_ins_support,
+                "disponibility": disponibility_ins_support,
+                "status": status_ins_support,
+                "comments": comments_ins_support,
+            })
+
+        return True, "Miembro insertado correctamente."
+
+    except Exception as e:
+        print("Error al insertar el miembro:", e)
+        return False, f"Error al insertar el miembro: {e}"
+
+    finally:
+        # Cerrar la conexión
+        cerrarConexion(connection)
+
+def eliminar_miembro(id_support_selected):
+    """Verifica si un miembro tiene actividades asociadas. Si no tiene, elimina la petición y luego al miembro en una transacción."""
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return False, "No se pudo establecer la conexión a la base de datos."
+
+    try:
+        # Iniciar una transacción
+        with connection.begin():  # Comienza la transacción
+            # Verificar si el miembro tiene actividades asociadas
+            query_verificar_actividades = text("""
+                SELECT a.idMiembro, count(*) as act_abiertas
+                FROM actividad a
+                INNER JOIN miembro m ON a.idMiembro = m.idMiembro
+                WHERE a.idMiembro = :id_support_selected
+                GROUP BY a.idMiembro;
+            """)
+
+            result = connection.execute(query_verificar_actividades, {"id_support_selected": id_support_selected}).fetchone()
+
+            # Verificar si el miembro tiene actividades asociadas (usando índice en lugar de clave de cadena)
+            if result and result[1] > 0:  # Accede al conteo de actividades con el índice 1
+                return False, f"El miembro con ID #{id_support_selected} tiene actividades asociadas y no puede ser eliminado."
+
+            # Si el miembro no tiene actividades, proceder con la eliminación de la petición
+            query_eliminar_peticion = text("""
+                DELETE FROM peticion_nuevo_recurso WHERE idMiembro = :id_support_selected;
+            """)
+
+            connection.execute(query_eliminar_peticion, {"id_support_selected": id_support_selected})
+
+            # Luego, eliminar al miembro
+            query_eliminar_miembro = text("""
+                DELETE FROM miembro WHERE idMiembro = :id_support_selected;
+            """)
+
+            connection.execute(query_eliminar_miembro, {"id_support_selected": id_support_selected})
+
+            # Si todo fue exitoso, la transacción se confirma automáticamente al salir del bloque 'with'
+            return True, f"Petición y miembro con ID #{id_support_selected} eliminados exitosamente."
+
+    except Exception as e:
+        # Si ocurre algún error, la transacción se revierte automáticamente
+        print("Error al realizar la operación:", e)
+        return False, f"Error al realizar la operación: {e}"
+
+    finally:
+        # Cerrar la conexión
+        cerrarConexion(connection)
+
+
 ############################################################### General ############################################################### 
 def consultar_nombre_insensible(nombre, base_datos):
     """Consulta si hay un nombre igual en la base de datos, insensible a mayúsculas y minúsculas."""
@@ -324,8 +984,8 @@ def consultar_nombre_insensible(nombre, base_datos):
     
     # Verificar si se encontraron resultados
     if isinstance(result, pd.DataFrame) and not result.empty:
-        return True  # Se encontró el nombre
-    return False  # No se encontró el nombre
+        return True  # Se encontró el campo
+    return False  # No se encontró el campo
 
 def existe_cliente(nombre):
     """Consulta si hay un nombre igual en la base de datos, insensible a mayúsculas y minúsculas."""
