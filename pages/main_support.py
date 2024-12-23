@@ -3,6 +3,7 @@ import pandas as pd
 import time
 from menu import menu_with_redirect
 import logic.bd as bd
+import logic.utilities as ut 
 
 
 
@@ -110,65 +111,91 @@ with tab_ins_support:
     else:
         st.info("No tienes permisos para realizar esta acción, Contacta al administrador")
 
-# Falta
 with tab_upd_support:
-    supports_available = bd.consultar("SELECT * FROM miembro;")
-    
-    if supports_available is not None:
-        combined_supports = [f"#{row['idMiembro']} - {row['nombre']}" for index, row in supports_available.iterrows()]
-        support_selected = st.selectbox("Selecciona un Miembro", combined_supports, key="update_supports_sb")
-        id_support_selected = int (support_selected.split(' - ')[0][1:])
-        support_data = supports_available[supports_available['idMiembro']==id_support_selected]
-        
-        #Necesitamos ademas saber el index del estatus
-        status_dict = {
-            "Libre": 0,
-            "Vacaciones": 1,
-            "En Actividad": 2,
-            "Incapacidad": 3
-        }
+    if any(role in ["admin", "user"] for role in st.session_state["roles"]):
+        if any(role in ["admin"] for role in st.session_state["roles"]):
+            st.info("Considere que el cambio en el estatus de un miembro no cambiará el estatus de las actividades a las que esta asociado. Esto se deberá realizar manualmente.")
+            supports_available = bd.consultar_miembros(0)
 
-        index_status = status_dict[support_data['estatus'].iloc[0]]
+            if supports_available is not None:
+                combined_supports = [f"#{row['idMiembro']} - {row['nombre']}" for index, row in supports_available.iterrows()]
+                support_selected = st.selectbox("Selecciona un Miembro", combined_supports, key="update_supports_sb")
+                id_support_selected = int (support_selected.split(' - ')[0][1:])
+                support_data = supports_available[supports_available['idMiembro']==id_support_selected]
+                
+                #Necesitamos ademas saber el index del estatus
+                index_status = ut.dict_support_upd(support_data['estatus'].iloc[0])
+
+                with st.form("update_support", clear_on_submit= True):
+                    name_upd_support = st.text_input("Nombre*: ", value=f"{support_data['nombre'].iloc[0]}", key="name_ins_support")
+                    phone_upd_support = st.text_input("Telefono de Contacto*: ", value=f"{support_data['telefono'].iloc[0]}")
+                    email_upd_support = st.text_input("email*: ", value=f"{support_data['email'].iloc[0]}")
+                    address_upd_support = st.text_input("Dirección*: ", value=f"{support_data['direccion'].iloc[0]}")
+                    status_upd_support = st.selectbox("Estatus", ["Libre","Vacaciones", "En Actividad", "Incapacidad"], index=index_status)
+                    comments_upd_support = st.text_area("Notas Adicionales: ", value=f"{support_data['notas'].iloc[0]}")
+                    st.write("*Campos Obligatorios")
+                    submit_upd_support = st.form_submit_button("Actualizar")
 
 
-        with st.form("update_support", clear_on_submit= True):
-            name_upd_support = st.text_input("Nombre*: ", value=f"{support_data['nombre'].iloc[0]}", key="name_ins_support")
-            phone_upd_support = st.text_input("Telefono de Contacto*: ", value=f"{support_data['telefono'].iloc[0]}")
-            email_upd_support = st.text_input("email*: ", value=f"{support_data['email'].iloc[0]}")
-            address_upd_support = st.text_input("Dirección*: ", value=f"{support_data['direccion'].iloc[0]}")
-            status_upd_support = st.selectbox("Estatus", ["Libre","Vacaciones", "En Actividad", "Incapacidad"], index=index_status)
-            comments_upd_support = st.text_area("Notas Adicionales: ", value=f"{support_data['notas'].iloc[0]}")
-            st.write("*Campos Obligatorios")
-            submit_upd_support = st.form_submit_button("Actualizar")
-        
-        
+                    message_container = st.empty()
 
-    message_container = st.empty()
-
-    if submit_upd_support:
-        if not name_upd_support.strip() or not phone_upd_support.strip() or not email_upd_support.strip()\
-        or not address_upd_support.strip():
-            st.error("Miembro de Soporte Actualizado")
-            st.info("Llene todos los campos obligatorios")
-        else:
-            if status_upd_support in ["Vacaciones", "Baja", "En Actividad", "Incapacidad"]:
-                    disponibility_upd_support = "No Disponible"
-                    print(disponibility_upd_support)
+                if submit_upd_support:
+                    if not name_upd_support.strip() or not phone_upd_support.strip() or not email_upd_support.strip() or not address_upd_support.strip():
+                        st.error("Miembro de Soporte Actualizado")
+                        st.info("Llene todos los campos obligatorios")
+                    else:
+                        if status_upd_support in ["Vacaciones", "Baja", "En Actividad", "Incapacidad"]:
+                                disponibility_upd_support = "No Disponible"
+                        else: 
+                            disponibility_upd_support = "Disponible"
+                        state_update_support, msj_update_support = bd.actualizar_miembro(id_support_selected, name_upd_support, phone_upd_support, email_upd_support, address_upd_support, disponibility_upd_support, status_upd_support, comments_upd_support)
+                        if state_update_support:
+                                st.success(msj_update_support)
+                                st.info(f"{name_upd_support} -- {phone_upd_support} -- {email_upd_support} -- {address_upd_support} -- {comments_upd_support}")
+                        else:
+                            st.error(msj_update_support)
+                        
+                    # Para que se limpien los mensajes
+                    time.sleep(3)
+                    message_container.empty()
+                    st.rerun()
             else: 
-                disponibility_upd_support = "Disponible"
-            state_update_support, msj_update_support = bd.actualizar(f"UPDATE miembro SET nombre='{name_upd_support}', telefono='{phone_upd_support}', email='{email_upd_support}', direccion='{address_upd_support}', disponibilidad='{disponibility_upd_support}', estatus='{status_upd_support}', notas='{comments_upd_support}' WHERE idMiembro = '{id_support_selected}';")
-            if state_update_support == 1:
-                    st.success("Miembro Actualizado")
-                    st.info(f"{name_upd_support} -- {phone_upd_support} -- {email_upd_support} -- {address_upd_support} -- {comments_upd_support}")
-            else:
-                st.error("Miembro No Actualizado")
-                st.info(msj_update_support)
-            
-        # Para que se limpien los mensajes
-        time.sleep(3)
-        message_container.empty()
-        st.rerun()
+                st.warning("No hay datos para mostrar")
 
+        else: 
+            state_support_indie, id_support_selected = bd.consultar_id_email(st.session_state['email'])
+            if state_support_indie:
+                support_data = bd.consultar_miembro_id(id_support_selected)     
+
+                with st.form("update_support_indie", clear_on_submit= True):
+                    name_upd_support = st.text_input("Nombre*: ", value=f"{support_data['nombre'].iloc[0]}", key="name_ins_support")
+                    phone_upd_support = st.text_input("Telefono de Contacto*: ", value=f"{support_data['telefono'].iloc[0]}")
+                    address_upd_support = st.text_input("Dirección*: ", value=f"{support_data['direccion'].iloc[0]}")
+                    comments_upd_support = st.text_area("Notas Adicionales: ", value=f"{support_data['notas'].iloc[0]}")
+                    st.write("*Campos Obligatorios")
+                    submit_upd_support = st.form_submit_button("Actualizar")
+
+                    message_container = st.empty()
+                
+                if submit_upd_support:
+                    if not name_upd_support.strip() or not phone_upd_support.strip() or not address_upd_support.strip():
+                        st.error("Miembro de Soporte Actualizado")
+                        st.info("Llene todos los campos obligatorios")
+                    else:
+                        state_update_support, msj_update_support = bd.actualizar_miembro_indie(id_support_selected, name_upd_support, phone_upd_support, address_upd_support, comments_upd_support)
+                        if state_update_support:
+                                st.success(msj_update_support)
+                                st.info(f"{name_upd_support} -- {phone_upd_support} -- {address_upd_support} -- {comments_upd_support}")
+                        else:
+                            st.error(msj_update_support)
+                        
+                    # Para que se limpien los mensajes
+                    time.sleep(3)
+                    message_container.empty()
+                    st.rerun()
+            
+    else:
+        st.warning("No tienes permisos para realizar esta acción, Contacta al administrador")   
 
 with tab_del_support:
     if any(role in ["admin"] for role in st.session_state["roles"]):

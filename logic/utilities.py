@@ -1,6 +1,5 @@
 from datetime import datetime
 
-
 def get_today_date():
     datetoday = datetime.now()
     dates_ins_resource = datetoday.strftime("%Y-%m-%d")
@@ -16,7 +15,6 @@ def get_total_days_life(vida_util, fecha_ingreso):
     dias_vida = (datetime.now().date() - fecha_ingreso).days
 
     return dias_vida, dias_totales
-
 
 def dict_resource_upd(resource_data_type, resource_data_life, resource_data_status):
     type_dict = {
@@ -41,3 +39,34 @@ def dict_resource_upd(resource_data_type, resource_data_life, resource_data_stat
     index_status = status_dict[resource_data_status]
 
     return index_type, index_life, index_status
+
+def dict_support_upd(support_data):
+    status_dict = {
+            "Libre": 0,
+            "Vacaciones": 1,
+            "En Actividad": 2,
+            "Incapacidad": 3
+        }
+
+    index_status = status_dict[support_data]
+
+    return index_status
+
+def dict_activity_upd(type, status):
+    # Necesitamos ademas saber el index del tipo, vida_util, estado
+    type_dict = {
+        "Matenimiento": 0,
+        "Incidencia": 1
+    }
+
+    status_dict = {
+        "Abierto": 0,
+        "En Curso": 1,
+        "Pendiente": 2,
+    }
+
+    index_type = type_dict[type]
+    index_status = status_dict[status]
+        
+    return index_type, index_status
+    

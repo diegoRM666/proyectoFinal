@@ -18,6 +18,10 @@ tab_lst_client, tab_ins_client, tab_upd_client, tab_del_client = st.tabs(["Lista
 #################################################### LISTADO ######################################################
 
 with tab_lst_client:
+    col1, col2 = st.columns([95,1])
+    with col2: 
+        if st.button("🔄", key="ref_resources"):
+            st.rerun()
     if any(role in ["admin", "user"] for role in st.session_state["roles"]):
         clientes = bd.consultar_todos_clientes()
         if clientes is not None and not clientes.empty:
