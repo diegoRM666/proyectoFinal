@@ -25,7 +25,7 @@ with tab_lst_activity:
         if st.button("🔄", key="ref_resources"):
             st.rerun()
     if any(role in ["admin"] for role in st.session_state["roles"]):
-        activities = bd.consultar_actividades_insercion(0,0)
+        activities = bd.consultar_actividades_listado(0,0)
 
         if activities is not None and not activities.empty:
 
@@ -69,7 +69,7 @@ with tab_lst_activity:
         st.markdown("---")
         st.markdown("### Actividades Cerradas")
 
-        activities_closed =bd.consultar_actividades_insercion(1,0)
+        activities_closed =bd.consultar_actividades_listado(1,0)
 
         if activities_closed is not None and not activities_closed.empty:
             col1, col2, col3 = st.columns(3)
@@ -96,7 +96,7 @@ with tab_lst_activity:
     
     elif any(role in ["user"] for role in st.session_state["roles"]):
         state_email, result_email = bd.consultar_id_email(st.session_state['email'])
-        activities = bd.consultar_actividades_insercion(2, result_email)
+        activities = bd.consultar_actividades_listado(2, result_email)
 
         if activities is not None and not activities.empty:
 
@@ -140,7 +140,7 @@ with tab_lst_activity:
         st.markdown("---")
         st.markdown("### Actividades Cerradas")
 
-        activities_closed =bd.consultar_actividades_insercion(3, result_email)
+        activities_closed =bd.consultar_actividades_listado(3, result_email)
 
         if activities_closed is not None and not activities_closed.empty:
             col1, col2, col3 = st.columns(3)

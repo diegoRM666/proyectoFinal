@@ -69,4 +69,20 @@ def dict_activity_upd(type, status):
     index_status = status_dict[status]
         
     return index_type, index_status
-    
+
+def dict_bill_upd(type, status):
+    type_dict = {
+                "Viaje": 0,
+                "Comida": 1,
+                "Hospedaje": 2
+            }
+
+    status_dict = {
+        "Abierta": 0,
+        "Pendiente": 1
+    }
+
+    index_type = type_dict[type]
+    index_status = status_dict[status]
+
+    return index_type, index_status

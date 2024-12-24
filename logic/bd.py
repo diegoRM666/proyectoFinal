@@ -34,7 +34,7 @@ def conectarBase():
         return None
 
 # Ejecutar una actualización
-def actualizar(query):
+#def actualizar(query):
     """Actualiza una o varias tablas en la base de datos y devuelve un mensaje de éxito o error."""
     connection = conectarBase()
     if connection is None:
@@ -58,7 +58,7 @@ def actualizar(query):
         cerrarConexion(connection)
 
 # Hacer una consulta de datos
-def consultar(query):
+#def consultar(query):
     """Ejecuta una consulta en la base de datos y devuelve los resultados en un DataFrame."""
     connection = conectarBase()
     if connection is None:
@@ -80,7 +80,7 @@ def consultar(query):
         cerrarConexion(connection)
 
 # Realizar una inserción
-def insertar(query):
+#def insertar(query):
     """Inserta datos en la base de datos y devuelve un mensaje de éxito o error."""
     connection = conectarBase()
     if connection is None:
@@ -670,8 +670,7 @@ def eliminar_peticion_nuevo_recurso(new_id_resource_selected):
         cerrarConexion(connection)
 
 ############################################################### Actividad ###############################################################
-# Se busca hacer transaccional este rollo, para no tener problemas
-
+# Listo
 def consultar_actividades():
     """Ejecuta una consulta en la base de datos y devuelve todos las actividades."""
     connection = conectarBase()
@@ -681,6 +680,26 @@ def consultar_actividades():
 
     try:
         df = pd.read_sql("SELECT * FROM actividad", connection)
+        return df
+
+    except Exception as e:
+        print("Error al ejecutar la consulta:", e)
+        msj = f"Error al ejecutar la consulta: {e}"
+        return msj
+
+    finally:
+        # Cerrar la conexión
+        cerrarConexion(connection)
+
+def consultar_actividades_id(id_support):
+    """Ejecuta una consulta en la base de datos y devuelve todos las actividades."""
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return "No se pudo establecer la conexión a la base de datos."
+
+    try:
+        df = pd.read_sql(f"SELECT * FROM actividad WHERE idMiembro={id_support}", connection)
         return df
 
     except Exception as e:
@@ -712,7 +731,7 @@ def consultar_actividades_eliminacion():
         # Cerrar la conexión
         cerrarConexion(connection)
 
-def consultar_actividades_insercion(type, id_miembro):
+def consultar_actividades_listado(type, id_miembro):
     """Ejecuta una consulta en la base de datos y devuelve todos las actividades."""
     connection = conectarBase()
     if connection is None:
@@ -1092,8 +1111,11 @@ def obtener_actividades_y_promedio(support_id):
         # Cierra la conexión si fue establecida
         cerrarConexion(connection)
 
-def insertar_miembro(name_ins_support, phone_ins_support, email_ins_support, address_ins_support, disponibility_ins_support, status_ins_support, comments_ins_support):
-    """Inserta un nuevo miembro en la base de datos dentro de una transacción."""
+def insertar_miembro(name_ins_support, phone_ins_support, email_ins_support, address_ins_support, 
+                     disponibility_ins_support, status_ins_support, comments_ins_support):
+    """
+    Inserta un nuevo miembro en la base de datos dentro de una transacción si el correo no está registrado.
+    """
     connection = conectarBase()
     if connection is None:
         print("No se pudo establecer la conexión a la base de datos.")
@@ -1102,14 +1124,25 @@ def insertar_miembro(name_ins_support, phone_ins_support, email_ins_support, add
     try:
         # Inicia la transacción
         with connection.begin():  # Transacción
-            # Consulta SQL para insertar el nuevo miembro
-            query = text("""
+            
+            # Verificar si ya existe un cliente con el correo proporcionado
+            query_check_email = text("""
+                SELECT COUNT(*) AS count 
+                FROM miembro 
+                WHERE email = :email;
+            """)
+            result = connection.execute(query_check_email, {"email": email_ins_support}).fetchone()
+
+            # Si existe un cliente con el correo, detener el proceso
+            if result[0] > 0:  # Acceso por índice porque `fetchone()` devuelve una tupla
+                return False, f"El correo {email_ins_support} ya está registrado. No se puede agregar el miembro."
+
+            # Insertar el nuevo miembro si el correo no está registrado
+            query_insert = text("""
                 INSERT INTO miembro (nombre, telefono, email, direccion, disponibilidad, estatus, notas) 
                 VALUES (:name, :phone, :email, :address, :disponibility, :status, :comments);
             """)
-
-            # Ejecutar la consulta
-            connection.execute(query, {
+            connection.execute(query_insert, {
                 "name": name_ins_support,
                 "phone": phone_ins_support,
                 "email": email_ins_support,
@@ -1283,6 +1316,306 @@ def actualizar_miembro_indie(id_support_selected, name_upd_support, phone_upd_su
         return False, f"Error al actualizar el miembro: {e}"
 
     finally:
+        cerrarConexion(connection)
+
+############################################################### Factura ###############################################################
+def consultar_facturas(type, email):
+    """Ejecuta una consulta en la base de datos y devuelve todos las facturas, y de acuerdo tambien con los miembros."""
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return "No se pudo establecer la conexión a la base de datos."
+
+    try:
+        if type==0:
+            df = pd.read_sql("SELECT f.*, a.idActividad as idA, a.nombre as nombre_a, m.idMiembro as idM, m.nombre as nombre_m FROM factura f INNER JOIN miembro m ON f.idMiembro=m.idMiembro INNER JOIN actividad a ON f.idActividad=a.idActividad;", connection)
+            return df
+        elif type==1:
+            df = pd.read_sql(f"SELECT f.*, a.idActividad as idA, a.nombre as nombre_a, m.idMiembro as idM, m.nombre as nombre_m FROM factura f INNER JOIN miembro m ON f.idMiembro=m.idMiembro INNER JOIN actividad a ON f.idActividad=a.idActividad WHERE m.email='{email}';", connection)
+            return df
+
+    except Exception as e:
+        print("Error al ejecutar la consulta:", e)
+        msj = f"Error al ejecutar la consulta: {e}"
+        return msj
+
+    finally:
+        # Cerrar la conexión
+        cerrarConexion(connection)
+
+def consultar_facturas_hist(id_activity_closed):
+    """Ejecuta una consulta en la base de datos y devuelve todos las facturas, y de acuerdo tambien con los miembros."""
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return "No se pudo establecer la conexión a la base de datos."
+
+    try:
+        df = pd.read_sql(f"SELECT fh.*, ah.nombre_a, ah.nombre_m, ah.idMiembro as idM FROM factura_hist fh INNER JOIN actividad_hist ah ON fh.idActividad = ah.idActividad WHERE fh.idActividad='{id_activity_closed}';", connection)
+        return df
+
+    except Exception as e:
+        print("Error al ejecutar la consulta:", e)
+        msj = f"Error al ejecutar la consulta: {e}"
+        return msj
+
+    finally:
+        # Cerrar la conexión
+        cerrarConexion(connection)
+
+def obtener_metricas_facturacion():
+    """
+    Obtiene métricas de facturación por actividades y clientes dentro de una transacción.
+
+    Returns:
+        tuple: (bool, pd.DataFrame, pd.DataFrame)
+            - bool: Indica si la operación fue exitosa.
+            - pd.DataFrame: Métricas de facturación por actividad.
+            - pd.DataFrame: Métricas de facturación por cliente.
+    """
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return False, None, None
+
+    try:
+        # Inicia la transacción
+        with connection.begin():  # Transacción
+            # Consulta para obtener métricas de facturación por actividad
+            query_activities_metrics = text("""
+                SELECT 
+                    fh.idActividad, 
+                    ah.nombre_a, 
+                    SUM(fh.costo + fh.impuesto) AS total
+                FROM factura_hist fh
+                INNER JOIN actividad_hist ah ON fh.idActividad = ah.idActividad
+                GROUP BY fh.idActividad;
+            """)
+            activities_result = connection.execute(query_activities_metrics)
+            activities_df = pd.DataFrame(activities_result.fetchall(), columns=activities_result.keys())
+
+            # Consulta para obtener métricas de facturación por cliente
+            query_client_metrics = text("""
+                SELECT 
+                    ah.idCliente, 
+                    ah.nombre_c, 
+                    SUM(fh.costo + fh.impuesto) AS total
+                FROM factura_hist fh
+                INNER JOIN actividad_hist ah ON fh.idActividad = ah.idActividad
+                GROUP BY ah.idCliente, ah.nombre_c;
+            """)
+            client_result = connection.execute(query_client_metrics)
+            client_df = pd.DataFrame(client_result.fetchall(), columns=client_result.keys())
+
+        return True, activities_df, client_df
+
+    except Exception as e:
+        print("Error al obtener las métricas de facturación:", e)
+        return False, None, None
+
+    finally:
+        # Cerrar la conexión
+        cerrarConexion(connection)
+
+def insertar_factura(name_ins_bill, dateemission_ins_bill, cost_ins_bill, type_ins_bill, tax_ins_bill, createby_ins_bill, id_activity_ins, id_support_ins):
+    """
+    Inserta una factura en la base de datos dentro de una transacción.
+
+    Args:
+        name_ins_bill (str): Nombre de la factura.
+        dateemission_ins_bill (str): Fecha de emisión de la factura.
+        cost_ins_bill (float): Costo de la factura.
+        type_ins_bill (str): Tipo de factura.
+        tax_ins_bill (float): Impuesto aplicado a la factura.
+        createby_ins_bill (str): Usuario que creó la factura.
+        id_activity_ins (int): ID de la actividad asociada.
+        id_support_ins (int): ID del miembro asociado.
+
+    Returns:
+        tuple: (bool, str)
+            - bool: Indica si la operación fue exitosa.
+            - str: Mensaje con el resultado de la operación.
+    """
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return False, "No se pudo establecer la conexión a la base de datos."
+
+    try:
+        # Inicia la transacción
+        with connection.begin():  # Transacción
+            # Consulta para insertar la factura
+            query = text("""
+                INSERT INTO factura (
+                    nombre, fecha_emision, costo, tipo, impuesto, estatus, 
+                    creado_por, fecha_modificacion, modificado_por, idActividad, idMiembro
+                ) 
+                VALUES (
+                    :name, :fecha_emision, :costo, :tipo, :impuesto, 'Abierta', 
+                    :creado_por, :fecha_modificacion, :modificado_por, :id_actividad, :id_miembro
+                );
+            """)
+
+            # Ejecutar la consulta
+            connection.execute(query, {
+                "name": name_ins_bill,
+                "fecha_emision": dateemission_ins_bill,
+                "costo": cost_ins_bill,
+                "tipo": type_ins_bill,
+                "impuesto": tax_ins_bill,
+                "creado_por": createby_ins_bill,
+                "fecha_modificacion": dateemission_ins_bill,
+                "modificado_por": createby_ins_bill,
+                "id_actividad": id_activity_ins,
+                "id_miembro": id_support_ins
+            })
+
+        return True, "Factura insertada correctamente."
+
+    except Exception as e:
+        print("Error al insertar la factura:", e)
+        return False, f"Error al insertar la factura: {e}"
+
+    finally:
+        # Cerrar la conexión
+        cerrarConexion(connection)
+
+def consultar_factura_actualizar():
+    """Ejecuta una consulta en la base de datos y devuelve todos las facturas para actualizar"""
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return "No se pudo establecer la conexión a la base de datos."
+
+    try:
+        df = pd.read_sql("SELECT f.*, m.idMiembro as idM, a.idActividad as idA, m.nombre as nombre_m, a.nombre as nombre_a FROM factura f INNER JOIN miembro m ON f.idMiembro=m.idMiembro INNER JOIN actividad a ON a.idActividad=f.idActividad WHERE f.estatus != 'Cerrada';", connection)
+        return df
+
+    except Exception as e:
+        print("Error al ejecutar la consulta:", e)
+        msj = f"Error al ejecutar la consulta: {e}"
+        return msj
+
+    finally:
+        # Cerrar la conexión
+        cerrarConexion(connection)
+
+def actualizar_factura(id_bill_selected, name_upd_bill, cost_upd_bill, type_upd_bill, tax_upd_bill, status_upd_bill, datemodified_upd_bill, modifyby_upd_bill, id_supportbill_selected, id_activitybill_selected):
+    """
+    Actualiza una factura en la base de datos dentro de una transacción.
+
+    Args:
+        id_bill_selected (int): ID de la factura a actualizar.
+        name_upd_bill (str): Nuevo nombre de la factura.
+        cost_upd_bill (float): Nuevo costo de la factura.
+        type_upd_bill (str): Nuevo tipo de factura.
+        tax_upd_bill (float): Nuevo impuesto aplicado a la factura.
+        status_upd_bill (str): Nuevo estado de la factura.
+        datemodified_upd_bill (str): Fecha de modificación.
+        modifyby_upd_bill (str): Usuario que realizó la modificación.
+        id_supportbill_selected (int): ID del miembro asociado.
+        id_activitybill_selected (int): ID de la actividad asociada.
+
+    Returns:
+        tuple: (bool, str)
+            - bool: Indica si la operación fue exitosa.
+            - str: Mensaje con el resultado de la operación.
+    """
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return False, "No se pudo establecer la conexión a la base de datos."
+
+    try:
+        # Inicia la transacción
+        with connection.begin():  # Transacción
+            # Consulta para actualizar la factura
+            query = text("""
+                UPDATE factura
+                SET
+                    nombre = :name,
+                    costo = :costo,
+                    tipo = :tipo,
+                    impuesto = :impuesto,
+                    estatus = :estatus,
+                    fecha_modificacion = :fecha_modificacion,
+                    modificado_por = :modificado_por,
+                    idMiembro = :id_miembro,
+                    idActividad = :id_actividad
+                WHERE idFactura = :id_factura;
+            """)
+
+            # Ejecutar la consulta
+            connection.execute(query, {
+                "name": name_upd_bill,
+                "costo": cost_upd_bill,
+                "tipo": type_upd_bill,
+                "impuesto": tax_upd_bill,
+                "estatus": status_upd_bill,
+                "fecha_modificacion": datemodified_upd_bill,
+                "modificado_por": modifyby_upd_bill,
+                "id_miembro": id_supportbill_selected,
+                "id_actividad": id_activitybill_selected,
+                "id_factura": id_bill_selected,
+            })
+
+        return True, "Factura actualizada correctamente."
+
+    except Exception as e:
+        print("Error al actualizar la factura:", e)
+        return False, f"Error al actualizar la factura: {e}"
+
+    finally:
+        # Cerrar la conexión
+        cerrarConexion(connection)
+
+def cerrar_factura(id_bill_selected_delete, datemodified_del_bill, modifyby_del_bill):
+    """
+    Cierra una factura actualizando su estado a 'Cerrada'.
+
+    Args:
+        id_bill_selected_delete (int): ID de la factura a cerrar.
+        datemodified_del_bill (str): Fecha de modificación.
+        modifyby_del_bill (str): Usuario que realiza el cierre.
+
+    Returns:
+        tuple: (bool, str)
+            - bool: Indica si la operación fue exitosa.
+            - str: Mensaje con el resultado de la operación.
+    """
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return False, "No se pudo establecer la conexión a la base de datos."
+
+    try:
+        # Inicia la transacción
+        with connection.begin():  # Transacción
+            # Consulta para cerrar la factura
+            query = text("""
+                UPDATE factura
+                SET
+                    fecha_modificacion = :fecha_modificacion,
+                    modificado_por = :modificado_por,
+                    estatus = 'Cerrada'
+                WHERE idFactura = :id_factura;
+            """)
+
+            # Ejecutar la consulta
+            connection.execute(query, {
+                "fecha_modificacion": datemodified_del_bill,
+                "modificado_por": modifyby_del_bill,
+                "id_factura": id_bill_selected_delete,
+            })
+
+        return True, f"Factura con ID #{id_bill_selected_delete} cerrada correctamente."
+
+    except Exception as e:
+        print("Error al cerrar la factura:", e)
+        return False, f"Error al cerrar la factura: {e}"
+
+    finally:
+        # Cerrar la conexión
         cerrarConexion(connection)
 
 ############################################################### General ############################################################### 
