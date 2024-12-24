@@ -296,7 +296,7 @@ with tab_upd_activity:
         activities_available = bd.consultar_actividades_dispo(1,id_support_selected)
         clients_upd = bd.consultar_todos_clientes()
 
-        if activities_available is not None:
+        if activities_available is not None and not activities_available.empty:
             combined_activities = [f"#{row['idActividad']} - {row['nombre']}" for index, row in activities_available.iterrows()]
             activity_selected = st.selectbox("Selecciona un Actividad", combined_activities, key="update_activities_sb")
             id_activity_selected = int (activity_selected.split(' - ')[0][1:])
@@ -347,7 +347,8 @@ with tab_upd_activity:
                     time.sleep(3)
                     message_container.empty()
                     st.rerun()
-
+        else: 
+            st.warning("No hay datos para mostrar")
     else: 
         st.info("No tienes permisos para realizar esta accion. Contacta al administrador")
 

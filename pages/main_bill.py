@@ -176,47 +176,48 @@ with tab_ins_bill:
         else:
             state_ins_mail, id_support_ins = bd.consultar_id_email(st.session_state['email'])
 
-        
-        #Esto actualizará lo siguiente:
         activities_ins_bills = bd.consultar_actividades_id(id_support_ins)
-        combined_activities = [f"#{row['idActividad']} - {row['nombre']}" for index, row in activities_ins_bills.iterrows()]    
-        activity_ins_bill = st.selectbox("Actvidad: ", combined_activities)
-        id_activity_ins = int (activity_ins_bill.split(' - ')[0][1:])
+        if activities_ins_bills is not None and not activities_ins_bills.empty:
+            combined_activities = [f"#{row['idActividad']} - {row['nombre']}" for index, row in activities_ins_bills.iterrows()]    
+            activity_ins_bill = st.selectbox("Actvidad: ", combined_activities)
+            id_activity_ins = int (activity_ins_bill.split(' - ')[0][1:])
         
-        with st.form("insert_bill", clear_on_submit=True):
-            # Entradas del formulario
-            name_ins_bill = st.text_input("Nombre*: ", placeholder="Taxi a Sitio")
-            cost_ins_bill = st.text_input("Costo*: ", placeholder="300.00")
-            type_ins_bill = st.selectbox("Tipo: ",["Viaje", "Comida", "Hospedaje"])
-            tax_ins_bill = st.text_input("Impuesto*: ", placeholder="45.00")
-            
-            # Indicador de campos obligatorios
-            st.markdown("*Campos Obligatorios")
-            
-            # Valores por default
-            dateemission_ins_bill = ut.get_today_date()
-            createby_ins_bill = st.session_state['name']
+            with st.form("insert_bill", clear_on_submit=True):
+                # Entradas del formulario
+                name_ins_bill = st.text_input("Nombre*: ", placeholder="Taxi a Sitio")
+                cost_ins_bill = st.text_input("Costo*: ", placeholder="300.00")
+                type_ins_bill = st.selectbox("Tipo: ",["Viaje", "Comida", "Hospedaje"])
+                tax_ins_bill = st.text_input("Impuesto*: ", placeholder="45.00")
+                
+                # Indicador de campos obligatorios
+                st.markdown("*Campos Obligatorios")
+                
+                # Valores por default
+                dateemission_ins_bill = ut.get_today_date()
+                createby_ins_bill = st.session_state['name']
 
-            # Botón de envío
-            submit_insert_bill = st.form_submit_button("Agregar", use_container_width=True)
+                # Botón de envío
+                submit_insert_bill = st.form_submit_button("Agregar", use_container_width=True)
 
-            message_container = st.empty()
+                message_container = st.empty()
 
-            if submit_insert_bill:
-                if not name_ins_bill.strip() or not cost_ins_bill.strip() or not tax_ins_bill.strip():
-                    st.error("Factura No Agregada")
-                    st.info("Llene todos los campos obligatorios")
-                else:
-                    state_insert_bill, msj_insert_bill = bd.insertar_factura(name_ins_bill, dateemission_ins_bill, cost_ins_bill, type_ins_bill, tax_ins_bill, createby_ins_bill, id_activity_ins, id_support_ins)
-                    if state_insert_bill:
-                        st.success(msj_insert_bill)
-                        st.info(f"{name_ins_bill} -- {dateemission_ins_bill} -- {cost_ins_bill} -- {type_ins_bill} -- Abierta -- {createby_ins_bill} -- {activities_ins_bills} -- {id_support_ins}")
+                if submit_insert_bill:
+                    if not name_ins_bill.strip() or not cost_ins_bill.strip() or not tax_ins_bill.strip():
+                        st.error("Factura No Agregada")
+                        st.info("Llene todos los campos obligatorios")
                     else:
-                        st.error(msj_insert_bill)
-                # Para que se limpien los mensajes
-                time.sleep(3)
-                message_container.empty()
-                st.rerun()
+                        state_insert_bill, msj_insert_bill = bd.insertar_factura(name_ins_bill, dateemission_ins_bill, cost_ins_bill, type_ins_bill, tax_ins_bill, createby_ins_bill, id_activity_ins, id_support_ins)
+                        if state_insert_bill:
+                            st.success(msj_insert_bill)
+                            st.info(f"{name_ins_bill} -- {dateemission_ins_bill} -- {cost_ins_bill} -- {type_ins_bill} -- Abierta -- {createby_ins_bill} -- {activities_ins_bills} -- {id_support_ins}")
+                        else:
+                            st.error(msj_insert_bill)
+                    # Para que se limpien los mensajes
+                    time.sleep(3)
+                    message_container.empty()
+                    st.rerun()
+        else: 
+            st.warning("No hay activiades abiertas")
     else: 
         st.info("No tienes permisos para realizar esta accion. Contacta al administrador")
 

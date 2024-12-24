@@ -12,6 +12,15 @@ credentials:
       password: $2b$12$oonB2p76NDK7zXuJNdJ7mOTRbMJ2yEE1l3p.emt98dG4TCIBmcYm.
       roles:
       - admin
+    santiagotovar:
+      email: santiago.tovar@apptec.com.mx
+      first_name: Santiago
+      last_name: Tovar
+      logged_in: false
+      password: $2b$12$4Vbq9jzVIaKdbxEHSpAf.OyKShQqdKi/5QZRvGq7Z5cpBiRe19EJa #$2OcRUPtiRdIVu
+      password_hint: Provided
+      roles:
+      - user
     victorreyes:
       email: victor.reyes@apptec.com.mx
       first_name: Victor
