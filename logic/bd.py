@@ -1319,6 +1319,7 @@ def actualizar_miembro_indie(id_support_selected, name_upd_support, phone_upd_su
         cerrarConexion(connection)
 
 ############################################################### Factura ###############################################################
+# Listo
 def consultar_facturas(type, email):
     """Ejecuta una consulta en la base de datos y devuelve todos las facturas, y de acuerdo tambien con los miembros."""
     connection = conectarBase()
