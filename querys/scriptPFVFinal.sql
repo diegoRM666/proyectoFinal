@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS `erp`.`cliente` (
   `notas` LONGTEXT NULL DEFAULT NULL,
   PRIMARY KEY (`idCliente`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 7
+AUTO_INCREMENT = 10
 DEFAULT CHARACTER SET = utf8mb3;
 
 
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS `erp`.`miembro` (
   `notas` LONGTEXT NULL DEFAULT NULL,
   PRIMARY KEY (`idMiembro`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 5
+AUTO_INCREMENT = 9
 DEFAULT CHARACTER SET = utf8mb3;
 
 
@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS `erp`.`actividad` (
     FOREIGN KEY (`idMiembro`)
     REFERENCES `erp`.`miembro` (`idMiembro`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 11
+AUTO_INCREMENT = 13
 DEFAULT CHARACTER SET = utf8mb3;
 
 
@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS `erp`.`recurso` (
   `notas` VARCHAR(45) NULL DEFAULT NULL,
   PRIMARY KEY (`idRecurso`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 8
+AUTO_INCREMENT = 13
 DEFAULT CHARACTER SET = utf8mb3;
 
 
@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS `erp`.`actividad_has_recurso` (
     FOREIGN KEY (`idRecurso`)
     REFERENCES `erp`.`recurso` (`idRecurso`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 12
+AUTO_INCREMENT = 14
 DEFAULT CHARACTER SET = utf8mb3;
 
 
@@ -204,7 +204,7 @@ CREATE TABLE IF NOT EXISTS `erp`.`factura` (
     FOREIGN KEY (`idMiembro`)
     REFERENCES `erp`.`miembro` (`idMiembro`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 6
+AUTO_INCREMENT = 8
 DEFAULT CHARACTER SET = utf8mb3;
 
 
@@ -251,28 +251,9 @@ CREATE TABLE IF NOT EXISTS `erp`.`peticion_nuevo_recurso` (
     FOREIGN KEY (`idMiembro`)
     REFERENCES `erp`.`miembro` (`idMiembro`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 2
+AUTO_INCREMENT = 16
 DEFAULT CHARACTER SET = utf8mb3;
 
-USE `erp`;
-
-DELIMITER $$
-USE `erp`$$
-CREATE
-DEFINER=`root`@`localhost`
-TRIGGER `erp`.`after_actividad_insert`
-AFTER INSERT ON `erp`.`actividad`
-FOR EACH ROW
-BEGIN
-    -- Actualizar la disponibilidad y estado del miembro
-    UPDATE miembro
-    SET disponibilidad = 'No Disponible', estatus = 'En Actividad'
-    WHERE idMiembro = NEW.idMiembro;
-
-END$$
-
-
-DELIMITER ;
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
