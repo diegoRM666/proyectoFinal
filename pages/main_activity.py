@@ -173,18 +173,19 @@ with tab_ins_activity:
         with st.form("insert_activity", clear_on_submit=True):
             # Obtenemos los clientes disponibles
             clients_available = bd.consultar_todos_clientes()
-            combined_clients = [f"#{row['idCliente']} - {row['nombre']}" for index, row in clients_available.iterrows()]
-            
-            name_ins_activity = st.text_input("Nombre*: ", placeholder="Reemplazo Inyector Tinta")
-            description_ins_activity = st.text_area("Descripción*: ", placeholder="Se requiere el reemplazo de...")
-            type_ins_activity = st.selectbox("Tipo*: ", ["Matenimiento", "Incidencia"])
-            client_ins_activity = st.selectbox("Cliente*: ", combined_clients)
+            if clients_available is not None and not clients_available.empty:
+                combined_clients = [f"#{row['idCliente']} - {row['nombre']}" for index, row in clients_available.iterrows()]
+                
+                name_ins_activity = st.text_input("Nombre*: ", placeholder="Reemplazo Inyector Tinta")
+                description_ins_activity = st.text_area("Descripción*: ", placeholder="Se requiere el reemplazo de...")
+                type_ins_activity = st.selectbox("Tipo*: ", ["Matenimiento", "Incidencia"])
+                client_ins_activity = st.selectbox("Cliente*: ", combined_clients)
 
-            id_client_ins = int (client_ins_activity.split(' - ')[0][1:])
+                id_client_ins = int (client_ins_activity.split(' - ')[0][1:])
 
-            # Generación automatica del resto de campos necesarios para la inserción
-            datestart_ins_activity = ut.get_today_date()
-            state_ins_activity = "Abierto"
+                # Generación automatica del resto de campos necesarios para la inserción
+                datestart_ins_activity = ut.get_today_date()
+                state_ins_activity = "Abierto"
 
             # Esta parte asigna de manera automatica. 
             supports_available_activity = bd.consultar_dispo_clientes(0)
@@ -194,8 +195,9 @@ with tab_ins_activity:
             else:
                 st.warning("No hay Miembros Disponibles. Se asignará al Miembro con menos actividades")
                 occupability_support = bd.consultar_dispo_clientes(1)
-                support_ins_activity = random.choice(occupability_support['id'].tolist())
-                support_random_selected = occupability_support[occupability_support['id'] == support_ins_activity]
+                if occupability_support is not None and not occupability_support.empty:
+                    support_ins_activity = random.choice(occupability_support['id'].tolist())
+                    support_random_selected = occupability_support[occupability_support['id'] == support_ins_activity]
 
 
             # Indicador de campos obligatorios
@@ -230,7 +232,7 @@ with tab_upd_activity:
         supports_upd = bd.consultar_miembros(1)
         clients_upd = bd.consultar_todos_clientes()
 
-        if activities_available is not None and supports_upd is not None:
+        if activities_available is not None and supports_upd is not None and not activities_available.empty and not supports_upd.empty:
             combined_activities = [f"#{row['idActividad']} - {row['nombre']}" for index, row in activities_available.iterrows()]
             activity_selected = st.selectbox("Selecciona un Actividad", combined_activities, key="update_activities_sb")
             id_activity_selected = int (activity_selected.split(' - ')[0][1:])
@@ -358,7 +360,7 @@ with tab_del_activity:
         st.info("Si cierra una actividad se cerrarán todas las facturas asociadas, en caso de estar abiertas")
 
         activities_delete_available = bd.consultar_actividades_eliminacion()
-        if activities_delete_available is not None:
+        if activities_delete_available is not None and not activities_delete_available.empty:
             combined_activities_delete = [f"#{row['idActividad']} - {row['nombre']}" for index, row in activities_delete_available.iterrows()]
             activity_selected_delete = st.selectbox("Selecciona una Actividad", combined_activities_delete, key="delete_activities_sb")
             id_activity_selected_delete = int (activity_selected_delete.split(' - ')[0][1:])

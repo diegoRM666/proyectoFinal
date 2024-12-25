@@ -423,7 +423,7 @@ def vincular_recurso(id_activity, id_resource):
     finally:
         cerrarConexion(connection)
 
-def insertar_recurso(serial, name, description, category, life, comments):
+def insertar_recurso(serial, name, description, category, life, comments, type):
     """
     Verifica si un recurso existe e inserta uno nuevo si no existe, todo en una transacción.
     """

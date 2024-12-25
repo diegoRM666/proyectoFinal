@@ -77,29 +77,30 @@ with tab_lst_bill:
             st_tmp, id_support= bd.consultar_id_email(st.session_state['email'])
             activities_closed = bd.consultar_actividades_listado(3, id_support)
 
-        combined_activities_closed = [f"#{row['idActividad']} - {row['nombre_a']}" for index, row in activities_closed.iterrows()]
-        activity_closed = st.selectbox("Actividad: ", combined_activities_closed)
-        id_activity_closed = int (activity_closed.split(' - ')[0][1:])
+        if activities_closed is not None and not activities_closed.empty:
+            combined_activities_closed = [f"#{row['idActividad']} - {row['nombre_a']}" for index, row in activities_closed.iterrows()]
+            activity_closed = st.selectbox("Actividad: ", combined_activities_closed)
+            id_activity_closed = int (activity_closed.split(' - ')[0][1:])
 
-        bills_closed =bd.consultar_facturas_hist(id_activity_closed)
+            bills_closed =bd.consultar_facturas_hist(id_activity_closed)
 
 
-        if bills_closed is not None and not bills_closed.empty:
-            col1, col2, col3 = st.columns(3)
-            
-            # Iterar sobre los activities en el DataFrame
-            for _, bill in bills_closed.iterrows():
+            if bills_closed is not None and not bills_closed.empty:
+                col1, col2, col3 = st.columns(3)
                 
-                with st.container(border=True):
-                    st.markdown(f"## 💵 #{bill['idFactura']} - {bill['nombre']}")
-                    st.markdown(f"📆 Fecha Emision: {bill['fecha_emision']}")
-                    st.markdown(f"🪙 Costo: {bill['costo']}")
-                    st.markdown(f"📖 Tipo: {bill['tipo']}")
-                    st.markdown(f"📈 Impuesto: {bill['impuesto']}")
-                    st.markdown(f"👤 Creado Por: {bill['creado_por']}")
-                    st.markdown(f"📅 Ultima Modificación: {bill['fecha_modificacion']}")
-                    st.markdown(f"👤 Modificado Por: {bill['modificado_por']}")
-                    st.write(f"💼 Actividad: #{bill['idActividad']}-{bill['nombre_a']}")
+                # Iterar sobre los activities en el DataFrame
+                for _, bill in bills_closed.iterrows():
+                    
+                    with st.container(border=True):
+                        st.markdown(f"## 💵 #{bill['idFactura']} - {bill['nombre']}")
+                        st.markdown(f"📆 Fecha Emision: {bill['fecha_emision']}")
+                        st.markdown(f"🪙 Costo: {bill['costo']}")
+                        st.markdown(f"📖 Tipo: {bill['tipo']}")
+                        st.markdown(f"📈 Impuesto: {bill['impuesto']}")
+                        st.markdown(f"👤 Creado Por: {bill['creado_por']}")
+                        st.markdown(f"📅 Ultima Modificación: {bill['fecha_modificacion']}")
+                        st.markdown(f"👤 Modificado Por: {bill['modificado_por']}")
+                        st.write(f"💼 Actividad: #{bill['idActividad']}-{bill['nombre_a']}")
                     st.write(f"👤 Miembro: #{bill['idM']}-{bill['nombre_m']}")         
         else:
             st.warning("No existen datos")
@@ -167,12 +168,14 @@ with tab_metric_bill:
         st.info("No tienes permisos para realizar esta accion. Contacta al administrador")
 
 with tab_ins_bill:
+    id_support_ins=0
     if any(role in ["admin", "user"] for role in st.session_state["roles"]):
         if any(role in ["admin"] for role in st.session_state["roles"]):
             supports_ins_bills = bd.consultar_miembros(1)
-            combined_supports = [f"#{row['idMiembro']} - {row['nombre']}" for index, row in supports_ins_bills.iterrows()]
-            support_ins_bill = st.selectbox("Miembro: ", combined_supports)
-            id_support_ins = int (support_ins_bill.split(' - ')[0][1:])
+            if supports_ins_bills is not None and not supports_ins_bills.empty:
+                combined_supports = [f"#{row['idMiembro']} - {row['nombre']}" for index, row in supports_ins_bills.iterrows()]
+                support_ins_bill = st.selectbox("Miembro: ", combined_supports)
+                id_support_ins = int (support_ins_bill.split(' - ')[0][1:])
         else:
             state_ins_mail, id_support_ins = bd.consultar_id_email(st.session_state['email'])
 
@@ -225,7 +228,7 @@ with tab_upd_bill:
     if any(role in ["admin"] for role in st.session_state["roles"]):
         bills_available = bd.consultar_factura_actualizar()
 
-        if bills_available is not None:
+        if bills_available is not None and not bills_available.empty:
             combined_bills = [f"#{row['idFactura']} - {row['nombre']}" for index, row in bills_available.iterrows()]
             bill_selected = st.selectbox("Selecciona una Factura", combined_bills, key="update_bills_sb")
             id_bill_selected = int (bill_selected.split(' - ')[0][1:])
@@ -284,7 +287,7 @@ with tab_del_bill:
 
         bills_delete_available = bd.consultar_factura_actualizar()
         
-        if bills_delete_available is not None:
+        if bills_delete_available is not None and not bills_delete_available.empty:
             combined_bills_delete = [f"#{row['idFactura']} - {row['nombre']}" for index, row in bills_delete_available.iterrows()]
             bill_selected_delete = st.selectbox("Selecciona una Factura", combined_bills_delete, key="delete_bills_sb")
             id_bill_selected_delete = int (bill_selected_delete.split(' - ')[0][1:])

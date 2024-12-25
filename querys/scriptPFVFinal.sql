@@ -29,7 +29,6 @@ CREATE TABLE IF NOT EXISTS `erp`.`cliente` (
   `notas` LONGTEXT NULL DEFAULT NULL,
   PRIMARY KEY (`idCliente`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 10
 DEFAULT CHARACTER SET = utf8mb3;
 
 
@@ -41,13 +40,12 @@ CREATE TABLE IF NOT EXISTS `erp`.`miembro` (
   `nombre` VARCHAR(45) NULL DEFAULT NULL,
   `telefono` VARCHAR(45) NULL DEFAULT NULL,
   `email` VARCHAR(45) NULL DEFAULT NULL,
-  `direccion` VARCHAR(45) NULL DEFAULT NULL,
+  `direccion` VARCHAR(200) NULL DEFAULT NULL,
   `disponibilidad` VARCHAR(45) NULL DEFAULT NULL,
   `estatus` VARCHAR(45) NULL DEFAULT NULL,
   `notas` LONGTEXT NULL DEFAULT NULL,
   PRIMARY KEY (`idMiembro`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 9
 DEFAULT CHARACTER SET = utf8mb3;
 
 
@@ -75,7 +73,6 @@ CREATE TABLE IF NOT EXISTS `erp`.`actividad` (
     FOREIGN KEY (`idMiembro`)
     REFERENCES `erp`.`miembro` (`idMiembro`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 13
 DEFAULT CHARACTER SET = utf8mb3;
 
 
@@ -86,7 +83,7 @@ CREATE TABLE IF NOT EXISTS `erp`.`recurso` (
   `idRecurso` INT NOT NULL AUTO_INCREMENT,
   `nombre` VARCHAR(45) NULL DEFAULT NULL,
   `tipo` VARCHAR(45) NULL DEFAULT NULL,
-  `descripcion` VARCHAR(45) NULL DEFAULT NULL,
+  `descripcion` LONGTEXT NULL DEFAULT NULL,
   `categoria` VARCHAR(45) NULL DEFAULT NULL,
   `no_serie` VARCHAR(45) NULL DEFAULT NULL,
   `estado_recurso` VARCHAR(45) NULL DEFAULT NULL,
@@ -95,7 +92,6 @@ CREATE TABLE IF NOT EXISTS `erp`.`recurso` (
   `notas` VARCHAR(45) NULL DEFAULT NULL,
   PRIMARY KEY (`idRecurso`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 13
 DEFAULT CHARACTER SET = utf8mb3;
 
 
@@ -116,7 +112,6 @@ CREATE TABLE IF NOT EXISTS `erp`.`actividad_has_recurso` (
     FOREIGN KEY (`idRecurso`)
     REFERENCES `erp`.`recurso` (`idRecurso`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 14
 DEFAULT CHARACTER SET = utf8mb3;
 
 
@@ -151,7 +146,7 @@ CREATE TABLE IF NOT EXISTS `erp`.`recurso_hist` (
   `idRecurso` INT NOT NULL,
   `nombre` VARCHAR(45) NULL DEFAULT NULL,
   `tipo` VARCHAR(45) NULL DEFAULT NULL,
-  `descripcion` VARCHAR(45) NULL DEFAULT NULL,
+  `descripcion` LONGTEXT NULL DEFAULT NULL,
   `no_serie` VARCHAR(45) NULL DEFAULT NULL,
   PRIMARY KEY (`idRecurso`))
 ENGINE = InnoDB
@@ -204,7 +199,6 @@ CREATE TABLE IF NOT EXISTS `erp`.`factura` (
     FOREIGN KEY (`idMiembro`)
     REFERENCES `erp`.`miembro` (`idMiembro`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 8
 DEFAULT CHARACTER SET = utf8mb3;
 
 
@@ -251,7 +245,6 @@ CREATE TABLE IF NOT EXISTS `erp`.`peticion_nuevo_recurso` (
     FOREIGN KEY (`idMiembro`)
     REFERENCES `erp`.`miembro` (`idMiembro`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 16
 DEFAULT CHARACTER SET = utf8mb3;
 
 

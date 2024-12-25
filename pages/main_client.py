@@ -160,7 +160,7 @@ with tab_del_client:
     # Validamos el rol para ver si puede realizar inserciones o no:
     if any(role in ["admin"] for role in st.session_state["roles"]):
         clients_avaliable = bd.consultar_todos_clientes()
-        if clients_avaliable is not None:
+        if clients_avaliable is not None and not clients_avaliable.empty:
             combined_clients = [f"#{row['idCliente']} - {row['nombre']}" for index, row in clients_avaliable.iterrows()]
             client_selected = st.selectbox("Selecciona un Cliente", combined_clients)
             id_client_selected = int(client_selected.split(' - ')[0][1:])

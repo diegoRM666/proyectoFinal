@@ -117,7 +117,7 @@ with tab_upd_support:
             st.info("Considere que el cambio en el estatus de un miembro no cambiará el estatus de las actividades a las que esta asociado. Esto se deberá realizar manualmente.")
             supports_available = bd.consultar_miembros(0)
 
-            if supports_available is not None:
+            if supports_available is not None and not supports_available.empty:
                 combined_supports = [f"#{row['idMiembro']} - {row['nombre']}" for index, row in supports_available.iterrows()]
                 support_selected = st.selectbox("Selecciona un Miembro", combined_supports, key="update_supports_sb")
                 id_support_selected = int (support_selected.split(' - ')[0][1:])
@@ -201,7 +201,7 @@ with tab_del_support:
     if any(role in ["admin"] for role in st.session_state["roles"]):
         st.info("Si eliminamos un miembro, se eliminará de igual manera sus peticiones")
         supports_avaliable = bd.consultar_miembros(0)
-        if supports_avaliable is not None is not supports_available.empty:
+        if supports_avaliable is not None and not supports_available.empty:
             combined_supports = [f"#{row['idMiembro']} - {row['nombre']}" for index, row in supports_avaliable.iterrows()]
             support_selected = st.selectbox("Selecciona un Miembro", combined_supports)
             id_support_selected = int(support_selected.split(' - ')[0][1:])

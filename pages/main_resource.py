@@ -6,13 +6,8 @@ import logic.bd as bd
 from datetime import datetime
 import logic.utilities as ut
 
-
-
 # Primero hacemos las comprobacion
 menu_with_redirect()
-
-
-
 
 #Creamos un titulo
 st.markdown("# 🔧 Recursos")
@@ -191,7 +186,7 @@ with tab_ins_resource:
                     st.error("Recurso No Agregado")
                     st.info("Llene todos los campos obligatorios")
                 else:
-                    state_ins_resource, msj_ins_resource = bd.insertar_recurso({serialnumber_ins_resource},{name_ins_resource},{description_ins_resource}, {category_ins_resource}, {life_ins_resource},{comments_ins_resource})
+                    state_ins_resource, msj_ins_resource = bd.insertar_recurso(serialnumber_ins_resource, name_ins_resource ,description_ins_resource, category_ins_resource , life_ins_resource, comments_ins_resource, type_ins_resource)
                     if state_ins_resource:
                         st.success(msj_ins_resource)
                         st.info(f"{name_ins_resource} -- {type_ins_resource} -- {description_ins_resource} -- {category_ins_resource} -- {serialnumber_ins_resource} -- {life_ins_resource} -- En Stock -- {comments_ins_resource}")
@@ -208,7 +203,7 @@ with tab_upd_resource:
     if any(role in ["admin"] for role in st.session_state["roles"]):
         resources_available = bd.consultar_recursos()
         
-        if resources_available is not None:
+        if resources_available is not None and not resources_available.empty:
             combined_resources = [f"#{row['idRecurso']} - {row['nombre']}" for index, row in resources_available.iterrows()]
             resource_selected = st.selectbox("Selecciona un Recurso", combined_resources, key="update_resources_sb")
             id_resource_selected = int (resource_selected.split(' - ')[0][1:])
@@ -230,31 +225,31 @@ with tab_upd_resource:
                 submit_upd_resource = st.form_submit_button("Actualizar")
             
 
-        message_container = st.empty()
+                message_container = st.empty()
 
-        if submit_upd_resource:
-            if not name_upd_resource.strip() or not description_upd_resource.strip() or not serialnumber_upd_resource.strip():
-                st.error("Recurso No Actualizado")
-                st.info("Llene todos los campos obligatorios")
-            else:
-                state_update_resource, msj_update_resource = bd.actualizar_recurso(name_upd_resource, type_upd_resource, description_upd_resource, category_upd_resource, serialnumber_upd_resource, life_upd_resource, state_upd_resource, comments_upd_resource, id_resource_selected)
-                if state_update_resource:
-                        st.success("Recurso Actualizado")
-                        st.info(f"{name_upd_resource} -- {type_upd_resource} -- {description_upd_resource} -- {category_upd_resource} -- {serialnumber_upd_resource} -- {comments_upd_resource}")
-                else:
-                    st.error("Recurso No Actualizado")
-                    st.info(msj_update_resource)
-                
-            time.sleep(3)
-            message_container.empty()
-            st.rerun()
+                if submit_upd_resource:
+                    if not name_upd_resource.strip() or not description_upd_resource.strip() or not serialnumber_upd_resource.strip():
+                        st.error("Recurso No Actualizado")
+                        st.info("Llene todos los campos obligatorios")
+                    else:
+                        state_update_resource, msj_update_resource = bd.actualizar_recurso(name_upd_resource, type_upd_resource, description_upd_resource, category_upd_resource, serialnumber_upd_resource, life_upd_resource, state_upd_resource, comments_upd_resource, id_resource_selected)
+                        if state_update_resource:
+                                st.success("Recurso Actualizado")
+                                st.info(f"{name_upd_resource} -- {type_upd_resource} -- {description_upd_resource} -- {category_upd_resource} -- {serialnumber_upd_resource} -- {comments_upd_resource}")
+                        else:
+                            st.error("Recurso No Actualizado")
+                            st.info(msj_update_resource)
+                        
+                    time.sleep(3)
+                    message_container.empty()
+                    st.rerun()
     else:
         st.info("No tienes permisos para realizar esta acción, Contacta al administrador")
 
 with tab_del_resource:
     if any(role in ["admin"] for role in st.session_state["roles"]):
         resources_avaliable = bd.consultar_recursos()
-        if resources_avaliable is not None:
+        if resources_avaliable is not None and not resources_available.empty:
             combined_resources = [f"#{row['idRecurso']} - {row['nombre']}" for index, row in resources_avaliable.iterrows()]
             resource_selected = st.selectbox("Selecciona un Recurso", combined_resources)
             id_resource_selected = int(resource_selected.split(' - ')[0][1:])
@@ -355,8 +350,9 @@ with tab_new_resource:
             state_new_resource = "Recibido"
 
             if any(role in ["admin"] for role in st.session_state["roles"]):
-                support_new_resource = st.selectbox("Miembro Asociado:", combined_supports)
-                id_support_ins = int (support_new_resource.split(' - ')[0][1:])
+                if combined_supports:
+                    support_new_resource = st.selectbox("Miembro Asociado:", combined_supports)
+                    id_support_ins = int (support_new_resource.split(' - ')[0][1:])
             else:
                 # Nos dira si tenenos permiso, basandose en el corrreo
                 state_consultar_email, msj_consultar_email = bd.consultar_id_email(st.session_state['email'])
