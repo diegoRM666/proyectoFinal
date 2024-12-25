@@ -211,7 +211,7 @@ with tab_ins_activity:
                     st.error("Actividad No Creada")
                     st.info("Llene todos los campos obligatorios")
                 else:
-                    state_ins_activity, msj_ins_activity = bd.insertar_actividad(name_ins_activity, datestart_ins_activity, description_ins_activity, 'None', type_ins_activity, state_ins_activity, id_client_ins, support_ins_activity)
+                    state_ins_activity, msj_ins_activity = bd.insertar_actividad(name_ins_activity, datestart_ins_activity, description_ins_activity, type_ins_activity, state_ins_activity, id_client_ins, support_ins_activity)
                     
                     if state_ins_activity:
                         st.success(msj_ins_activity)

@@ -763,7 +763,7 @@ def consultar_actividades_listado(type, id_miembro):
 
 def insertar_actividad(name_ins_activity, datestart_ins_activity, description_ins_activity, type_ins_activity, state_ins_activity, id_client_ins, support_ins_activity):
     """
-    Inserta una nueva actividad en la base de datos utilizando una transacción.
+    Inserta una nueva actividad en la base de datos y actualiza el estado del miembro asociado utilizando una transacción.
     """
     connection = conectarBase()
     if connection is None:
@@ -772,13 +772,13 @@ def insertar_actividad(name_ins_activity, datestart_ins_activity, description_in
 
     try:
         with connection.begin():  # Inicia la transacción
-            query_insertar = text("""
+            # Insertar la actividad
+            query_insertar_actividad = text("""
                 INSERT INTO actividad 
                 (nombre, fecha_inicio, descripcion, acciones_realizadas, tipo, estado, idCliente, idMiembro) 
                 VALUES (:name, :datestart, :description, 'None', :type, :state, :id_client, :id_support);
             """)
-
-            connection.execute(query_insertar, {
+            connection.execute(query_insertar_actividad, {
                 "name": name_ins_activity,
                 "datestart": datestart_ins_activity,
                 "description": description_ins_activity,
@@ -788,13 +788,23 @@ def insertar_actividad(name_ins_activity, datestart_ins_activity, description_in
                 "id_support": support_ins_activity,
             })
 
+            # Actualizar el estado del miembro
+            query_actualizar_miembro = text("""
+                UPDATE miembro
+                SET disponibilidad = 'No Disponible', estatus = 'En Actividad'
+                WHERE idMiembro = :id_support;
+            """)
+            connection.execute(query_actualizar_miembro, {
+                "id_support": support_ins_activity,
+            })
+
         # Si todo fue exitoso, la transacción se confirma automáticamente
-        return True, "Actividad insertada exitosamente."
+        return True, "Actividad insertada y estado del miembro actualizado exitosamente."
 
     except Exception as e:
         # Si ocurre un error, la transacción se revierte automáticamente
-        print("Error al insertar la actividad:", e)
-        return False, f"Error al insertar la actividad: {e}"
+        print("Error al insertar la actividad o actualizar el miembro:", e)
+        return False, f"Error al insertar la actividad o actualizar el miembro: {e}"
 
     finally:
         cerrarConexion(connection)
