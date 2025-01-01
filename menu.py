@@ -12,10 +12,12 @@ def authenticated_menu():
         st.sidebar.page_link("pages/main_bill.py", label="Factura")
         st.sidebar.page_link("pages/main_activity.py", label="Actividad")
 
+        if any(role in ["admin"] for role in st.session_state["roles"]):
+            st.sidebar.page_link("pages/main_report.py", label="Reportes")
+
 def unauthenticated_menu():
     # Show a navigation menu for unauthenticated users
     st.sidebar.page_link("login.py", label="Log in")
-
 
 def menu():
     # Determine if a user is logged in or not, then show the correct
@@ -24,7 +26,6 @@ def menu():
         unauthenticated_menu()
         return
     authenticated_menu()
-
 
 def menu_with_redirect():
     # Redirect users to the main page if not logged in, otherwise continue to

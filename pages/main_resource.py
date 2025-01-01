@@ -81,7 +81,7 @@ with tab_asign_resource:
         resources_to_asign = bd.consultar_recursos_disponible()
         activities_to_assign = bd.consultar_actividades()
 
-        if resources_to_asign is not None and not resources_to_asign.empty and activities_to_assign is not None and not activities_to_assign.empty:
+        if activities_to_assign is not None and not activities_to_assign.empty:
             # Crear listas con recursos y actividades
             combined_resources_toasign = [f"#{row['idRecurso']} - {row['nombre']}" for index, row in resources_to_asign.iterrows()]
             combined_activities_toasign = [f"#{row['idActividad']} - {row['nombre']}" for index, row in activities_to_assign.iterrows()]

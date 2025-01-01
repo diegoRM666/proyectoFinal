@@ -1629,38 +1629,274 @@ def cerrar_factura(id_bill_selected_delete, datemodified_del_bill, modifyby_del_
         # Cerrar la conexión
         cerrarConexion(connection)
 
+############################################################### Reportes ############################################################### 
+def consultar_actividades_report(start_date, end_date):
+    """Ejecuta una consulta en la base de datos y devuelve todos las facturas, y de acuerdo tambien con los miembros."""
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return "No se pudo establecer la conexión a la base de datos."
+
+    try:
+        df = pd.read_sql(f"SELECT fecha_fin_a as fecha_cierre, count(*) as actividades_cerradas FROM actividad_hist WHERE fecha_fin_a >= '{start_date}' AND fecha_fin_a<='{end_date}' GROUP BY fecha_fin_a;", connection)
+        df2 = pd.read_sql(f"SELECT fecha_inicio as fecha_apertura, count(*) as actividades_abiertas FROM actividad WHERE fecha_inicio >= '{start_date}' AND fecha_inicio <='{end_date}' GROUP BY fecha_inicio;", connection)
+        df3 = pd.read_sql(f"SELECT AVG(fecha_fin_a - fecha_inicio_a) as promedio_solucion FROM actividad_hist WHERE fecha_fin_a >= '{start_date}' AND fecha_fin_a<='{end_date}' ", connection)
+        return df, df2, df3
+
+    except Exception as e:
+        print("Error al ejecutar la consulta:", e)
+        msj = f"Error al ejecutar la consulta: {e}"
+        return msj
+
+    finally:
+        # Cerrar la conexión
+        cerrarConexion(connection)
+
+def obtener_metricas_facturacion_report(start_date, end_date):
+    """
+    Obtiene métricas de facturación por actividades y clientes dentro de una transacción.
+
+    Returns:
+        tuple: (bool, pd.DataFrame, pd.DataFrame)
+            - bool: Indica si la operación fue exitosa.
+            - pd.DataFrame: Métricas de facturación por actividad.
+            - pd.DataFrame: Métricas de facturación por cliente.
+    """
+    connection = conectarBase()
+    if connection is None:
+        print("No se pudo establecer la conexión a la base de datos.")
+        return False, None, None
+
+    try:
+        # Inicia la transacción
+        with connection.begin():  # Transacción
+            # Consulta para obtener métricas de facturación por actividad
+            query_activities_metrics = text(f"""
+                SELECT 
+                    fh.idActividad, 
+                    ah.nombre_a, 
+                    SUM(fh.costo + fh.impuesto) AS total
+                FROM factura_hist fh
+                INNER JOIN actividad_hist ah ON fh.idActividad = ah.idActividad
+                WHERE fh.fecha_modificacion >= '{start_date}' AND fh.fecha_modificacion <= '{end_date}'
+                GROUP BY fh.idActividad;
+            """)
+            activities_result = connection.execute(query_activities_metrics)
+            activities_df = pd.DataFrame(activities_result.fetchall(), columns=activities_result.keys())
+
+            # Consulta para obtener métricas de facturación por cliente
+            query_client_metrics = text(f"""
+                SELECT 
+                    ah.idCliente, 
+                    ah.nombre_c, 
+                    SUM(fh.costo + fh.impuesto) AS total
+                FROM factura_hist fh
+                INNER JOIN actividad_hist ah ON fh.idActividad = ah.idActividad
+                WHERE fh.fecha_modificacion >= '{start_date}' AND fh.fecha_modificacion <= '{end_date}'
+                GROUP BY ah.idCliente, ah.nombre_c;
+            """)
+            client_result = connection.execute(query_client_metrics)
+            client_df = pd.DataFrame(client_result.fetchall(), columns=client_result.keys())
+
+        return True, activities_df, client_df
+
+    except Exception as e:
+        print("Error al obtener las métricas de facturación:", e)
+        return False, None, None
+
+    finally:
+        # Cerrar la conexión
+        cerrarConexion(connection)
+
+def obtener_recursos_tipo(start_date, end_date):
+    """
+    Ejecuta las consultas para obtener la cantidad de recursos agrupados por fecha de finalización,
+    separados por los tipos 'Material' y 'Herramienta'.
+
+    :return: Tuple (result_material, result_herramienta, success) donde:
+             - result_material: DataFrame con los resultados para 'Material'.
+             - result_herramienta: DataFrame con los resultados para 'Herramienta'.
+             - success: Booleano que indica si las consultas se ejecutaron correctamente.
+    """
+    # Obtener la conexión a la base de datos
+    connection = conectarBase()
+
+    # Verificar si la conexión fue exitosa
+    if connection is None:
+        print("No se pudo conectar a la base de datos.")
+        return None, None, False
+
+    # Consultas SQL
+    query_material = f"""
+    SELECT 
+        ah.fecha_fin_a as fecha, 
+        count(*) as no_materiales
+    FROM 
+        actividad_hist ah
+    INNER JOIN 
+        actividad_has_recurso_hist arh ON ah.idActividad = arh.idActividad
+    INNER JOIN 
+        recurso_hist rh ON arh.idRecurso = rh.idRecurso
+    WHERE 
+        rh.tipo = 'Material'
+    AND 
+        ah.fecha_fin_a >= '{start_date}'  AND ah.fecha_fin_a <= '{end_date}'
+    GROUP BY 
+        ah.fecha_fin_a;
+    """
+
+    query_herramienta = f"""
+    SELECT 
+        ah.fecha_fin_a as fecha, 
+        count(*) as no_herramientas
+    FROM 
+        actividad_hist ah
+    INNER JOIN 
+        actividad_has_recurso_hist arh ON ah.idActividad = arh.idActividad
+    INNER JOIN 
+        recurso_hist rh ON arh.idRecurso = rh.idRecurso
+    WHERE 
+        rh.tipo = 'Herramienta'
+    AND 
+        ah.fecha_fin_a >= '{start_date}'  
+    AND 
+        ah.fecha_fin_a <= '{end_date}'
+    GROUP BY 
+        ah.fecha_fin_a;
+    """
+
+    try:
+        # Ejecutar ambas consultas
+        result_material = pd.read_sql_query(query_material, connection)
+        result_herramienta = pd.read_sql_query(query_herramienta, connection)
+
+        # Retornar los resultados junto con un indicador de éxito
+        return result_material, result_herramienta, True
+
+    except Exception as e:
+        print(f"Error al ejecutar las consultas: {e}")
+        return None, None, False
+
+    finally:
+        # Cerrar la conexión a la base de datos
+        connection.close()
+
+
+def obtener_actividades_miembro(start_date, end_date):
+    """
+    Ejecuta una consulta para obtener el promedio de actividades por miembro,
+    dentro de una transacción segura.
+
+    :return: DataFrame con las columnas `idMiembro`, `nombre_m` y `prom_actividades`, 
+             junto con un indicador de éxito (True o False).
+    """
+    # Obtener la conexión a la base de datos
+    connection = conectarBase()
+
+    if connection is None:
+        print("No se pudo conectar a la base de datos.")
+        return None, False
+
+    # Consulta SQL
+    query = f"""
+    SELECT idMiembro, 
+           nombre_m, 
+           COUNT(*) as actividades
+    FROM actividad_hist
+    WHERE fecha_fin_a >= '{start_date}' AND  fecha_fin_a <= '{end_date}'
+    GROUP BY idMiembro, nombre_m;
+    """
+
+    try:
+        # Iniciar una transacción
+        with connection.begin() as transaction:
+            # Ejecutar la consulta y cargar los resultados en un DataFrame
+            result = pd.read_sql_query(query, connection)
+
+        # Devolver los resultados y éxito
+        return result, True
+
+    except Exception as e:
+        print(f"Error al ejecutar la consulta: {e}")
+        return None, False
+
+    finally:
+        # Cerrar la conexión
+        connection.close()
+
 ############################################################### General ############################################################### 
 def consultar_nombre_insensible(nombre, base_datos):
+
     """Consulta si hay un nombre igual en la base de datos, insensible a mayúsculas y minúsculas."""
+    # Importar la conexión desde conectarBase
+    connection = conectarBase()
+
+    # Verificar si la conexión fue exitosa
+    if connection is None:
+        print("No se pudo conectar a la base de datos.")
+        return False
+
     # Asegurarse de que el nombre esté en minúsculas para la comparación
     query = f"""
     SELECT * FROM erp.{base_datos}
-    WHERE nombre COLLATE utf8_general_ci = '{nombre}';
+    WHERE nombre COLLATE utf8_general_ci = %s;
     """
-    
-    # Ejecutar la consulta usando la función consultar
-    result = consultar(query)
-    
-    # Verificar si se encontraron resultados
-    if isinstance(result, pd.DataFrame) and not result.empty:
-        return True  # Se encontró el campo
-    return False  # No se encontró el campo
+
+    try:
+        # Ejecutar la consulta directamente
+        result = pd.read_sql_query(query, connection, params=(nombre,))
+        
+        # Verificar si se encontraron resultados
+        if not result.empty:
+            return True  # Se encontró el campo
+        return False  # No se encontró el campo
+
+    except Exception as e:
+        print(f"Error al ejecutar la consulta: {e}")
+        return False
+
+    finally:
+        # Cerrar la conexión
+        connection.close()
 
 def existe_cliente(nombre):
-    """Consulta si hay un nombre igual en la base de datos, insensible a mayúsculas y minúsculas."""
-    # Asegurarse de que el nombre esté en minúsculas para la comparación
-    query = f"""
-    SELECT * FROM erp.cliente
-    WHERE nombre COLLATE utf8_general_ci = '{nombre}';
     """
-    
-    # Ejecutar la consulta usando la función consultar
-    result = consultar(query)
-    
-    # Verificar si se encontraron resultados
-    if isinstance(result, pd.DataFrame) and not result.empty:
-        return True  # Se encontró el nombre
-    return False  # No se encontró el nombre
+    Consulta si hay un cliente con el nombre especificado en la base de datos, 
+    insensible a mayúsculas y minúsculas.
+
+    :param nombre: Nombre del cliente a buscar.
+    :return: True si se encuentra el cliente, False en caso contrario.
+    """
+    # Obtener conexión a la base de datos
+    connection = conectarBase()
+
+    # Verificar si la conexión fue exitosa
+    if connection is None:
+        print("No se pudo conectar a la base de datos.")
+        return False
+
+    # Consulta SQL con parámetros para evitar inyección SQL
+    query = """
+    SELECT * FROM erp.cliente
+    WHERE nombre COLLATE utf8_general_ci = %s;
+    """
+
+    try:
+        # Ejecutar la consulta y cargar resultados en un DataFrame
+        result = pd.read_sql_query(query, connection, params=(nombre,))
+        
+        # Verificar si se encontraron resultados
+        if not result.empty:
+            return True  # Se encontró el cliente
+        return False  # No se encontró el cliente
+
+    except Exception as e:
+        print(f"Error al ejecutar la consulta: {e}")
+        return False
+
+    finally:
+        # Cerrar la conexión a la base de datos
+        connection.close()
 
 def eliminar(query):
     """Elimina registros de la base de datos y devuelve un mensaje de éxito o error."""
@@ -1685,7 +1921,6 @@ def eliminar(query):
         # Cierra la conexión si fue establecida
         cerrarConexion(connection)
 
-# Cerrar la conexión de BD
 def cerrarConexion(connection):
     """Cierra la conexión a la base de datos."""
     if connection is not None:

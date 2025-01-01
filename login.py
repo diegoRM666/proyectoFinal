@@ -40,6 +40,7 @@ def save_file_yaml():
 def deploy_information():
 
     if any(role in ["admin", "super-admin"] for role in st.session_state["roles"]):
+        st.markdown("# ℹ️ Cuenta")
         tab_info_session, tab_update_session, tab_create_new = st.tabs(["Información", "Actualizar", "Crear Nuevo Usuario"])
 
         with tab_info_session:

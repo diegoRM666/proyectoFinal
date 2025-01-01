@@ -1,4 +1,5 @@
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 def get_today_date():
     datetoday = datetime.now()
@@ -86,3 +87,21 @@ def dict_bill_upd(type, status):
     index_status = status_dict[status]
 
     return index_type, index_status
+
+def date_report(range_selected):
+    end_date = datetime.now()
+
+    if range_selected == "1 Semana":
+        start_date = end_date - relativedelta(weeks=1)
+    elif range_selected == "1 Mes":
+        start_date = end_date - relativedelta(months=1)
+    elif range_selected == "6 Meses":
+        start_date = end_date - relativedelta(months=6)
+    else:
+        start_date = None
+
+    return end_date.strftime('%Y-%m-%d'), start_date.strftime('%Y-%m-%d')
+
+def det_height_table(num_filas):
+    fig_height = 30 + (20 * num_filas)
+    return fig_height

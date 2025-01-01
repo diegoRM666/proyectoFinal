@@ -20,6 +20,10 @@ tab_lst_bill, tab_ins_bill, tab_upd_bill, tab_del_bill, tab_metric_bill= st.tabs
 
 
 with tab_lst_bill:
+    col1, col2 = st.columns([95,1])
+    with col2: 
+        if st.button("🔄", key="ref_resources"):
+            st.rerun()
     if any(role in ["admin", "user"] for role in st.session_state["roles"]):
         if any(role in ["admin"] for role in st.session_state["roles"]):
             bills = bd.consultar_facturas(0,0)
