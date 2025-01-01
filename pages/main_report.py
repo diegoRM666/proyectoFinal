@@ -513,6 +513,7 @@ def generar_pdf_latex(image_files, output_file=f"reporte_{semipath_name}.pdf"):
             fig.add_image(image_files[11][0], width=NoEscape(r'0.8\textwidth'))
             fig.add_caption(image_files[11][1])
 
+    doc.append(NoEscape(r"\textit{Datos obtenidos para el periodo " + f"{start_date}" + r" al " + f"{end_date}" + r"}"))
     doc.generate_pdf(output_file.split('.')[0], clean_tex=True)
 
 # Botón para generar PDF
