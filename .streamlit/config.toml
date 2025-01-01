@@ -1,2 +1,6 @@
 [client]
 showSidebarNavigation = false
+
+[server]
+port = 80
+headless = true
