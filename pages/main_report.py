@@ -19,10 +19,13 @@ col1, col2 = st.columns([8, 2])
 with col2:
     range_selected = st.selectbox("Rango", ["1 Semana", "1 Mes", "6 Meses"])
 
+current_directory = os.getcwd()
+print(f"Directorio actual: {current_directory}")
+
 # Obtener rango de fechas
 end_date, start_date = ut.date_report(range_selected) 
 semipath_name = f"{start_date}_to_{end_date}"
-semi_path_img = f"reports/img/"
+semi_path_img = current_directory + f"/reports/img/"
 
 
 # Lista para almacenar imágenes de gráficas y sus títulos
@@ -516,7 +519,7 @@ def generar_pdf_latex(image_files, output_file=f"reporte_{semipath_name}.pdf"):
 with st.container(): 
     if st.button("Generar PDF", use_container_width=True):
         output_pdf = f"reporte_{semipath_name}.pdf"
-        generar_pdf_latex(image_files, output_pdf)
+        generar_pdf_latex(image_files, "reports/"+output_pdf)
         st.success(f"PDF generado exitosamente: {output_pdf}")
-        with open(output_pdf, "rb") as pdf_file:
+        with open("reports/"+output_pdf, "rb") as pdf_file:
             st.download_button("Descargar PDF", data=pdf_file, file_name=f"reporte_{semipath_name}.pdf", mime="application/pdf")
