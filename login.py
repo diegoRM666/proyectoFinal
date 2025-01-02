@@ -73,7 +73,7 @@ def deploy_information():
             try:
                 (email_of_registered_user,
                     username_of_registered_user,
-                    name_of_registered_user) = authenticator.register_user(roles=['user'])
+                    name_of_registered_user) = authenticator.register_user(roles=['user'])  #Asigna automaticamente
                 if email_of_registered_user:
                     save_file_yaml()
                     st.success('Usuario Registrado correctamente')
