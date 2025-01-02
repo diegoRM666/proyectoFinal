@@ -12,12 +12,21 @@ credentials:
       password: $2b$12$oonB2p76NDK7zXuJNdJ7mOTRbMJ2yEE1l3p.emt98dG4TCIBmcYm.
       roles:
       - admin
+    miriammora:
+      email: miriam.mora@apptec.com.mx
+      first_name: Miriam
+      last_name: Mora
+      logged_in: false
+      password: $2b$12$Dq9efWRUvqfYrL55Arh.0ecg4IOMKVFUZJp3BTrsGXPkYkprr4BZ6 #miriamMora1512$ 
+      password_hint: Provided
+      roles:
+      - user
     santiagotovar:
       email: santiago.tovar@apptec.com.mx
       first_name: Santiago
       last_name: Tovar
       logged_in: false
-      password: $2b$12$4Vbq9jzVIaKdbxEHSpAf.OyKShQqdKi/5QZRvGq7Z5cpBiRe19EJa #$2OcRUPtiRdIVu
+      password: $2b$12$4Vbq9jzVIaKdbxEHSpAf.OyKShQqdKi/5QZRvGq7Z5cpBiRe19EJa
       password_hint: Provided
       roles:
       - user

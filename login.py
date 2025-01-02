@@ -73,10 +73,10 @@ def deploy_information():
             try:
                 (email_of_registered_user,
                     username_of_registered_user,
-                    name_of_registered_user) = authenticator.register_user()
+                    name_of_registered_user) = authenticator.register_user(roles=['user'])
                 if email_of_registered_user:
                     save_file_yaml()
-                    st.success('User registered successfully')
+                    st.success('Usuario Registrado correctamente')
             except RegisterError as e:
                 st.error(e)
 
