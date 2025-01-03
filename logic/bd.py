@@ -1781,7 +1781,6 @@ def obtener_recursos_tipo(start_date, end_date):
         # Cerrar la conexión a la base de datos
         connection.close()
 
-
 def obtener_actividades_miembro(start_date, end_date):
     """
     Ejecuta una consulta para obtener el promedio de actividades por miembro,

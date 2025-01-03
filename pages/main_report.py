@@ -33,7 +33,7 @@ image_files = []
 
 # Gráfica: Actividades cerradas y abiertas
 activities_closed, activities_open, avg_solved = bd.consultar_actividades_report(start_date, end_date)
-if activities_closed is not None and not activities_closed.empty and activities_open is not None and not activities_open.empty:
+if activities_closed is not None  and activities_open is not None:
     # Calculo de altura
     num_filas = len(activities_closed)
     num_filas2 = len(activities_open)
@@ -409,6 +409,12 @@ if state_report:
 
 # Función para generar PDF
 def generar_pdf_latex(image_files, output_file=f"reporte_{semipath_name}.pdf"):
+    # Aqui se generara un if para que no muestre información que no puede ser calculada: 
+    if avg_solved.empty: 
+        promedio_sol = 0.0
+    else:
+        promedio_sol = avg_solved['promedio_solucion'].iloc[0]
+
     doc = Document(documentclass="report")
     doc.preamble.append(NoEscape(r'\usepackage{graphicx}'))
     doc.preamble.append(NoEscape(r'\usepackage{helvet} '))
@@ -441,7 +447,7 @@ def generar_pdf_latex(image_files, output_file=f"reporte_{semipath_name}.pdf"):
             \end{minipage}
             """))
         doc.append(NoEscape(r"Durante el périodo observado se noto que el promedio de solución de actividades fue de \textbf{"
-        + f"{avg_solved['promedio_solucion'].iloc[0]:.2f}"
+        + f"{promedio_sol}"
         + r"} dias"))
 
     doc.append(NoEscape(r"\newpage"))
