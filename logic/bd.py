@@ -15,7 +15,7 @@ def conectarBase():
         if s_o == "Darwin":
             password = '15122121B'
         else:
-            password = 'gogo219715122121B$'
+            password = 'password'
         
         # Crear la URL de conexión de SQLAlchemy
         db_url = f"mysql+pymysql://root:{password}@localhost/erp"
@@ -32,76 +32,6 @@ def conectarBase():
     except Exception as e:
         print("Error al conectar a MySQL:", e)
         return None
-
-# Ejecutar una actualización
-#def actualizar(query):
-    """Actualiza una o varias tablas en la base de datos y devuelve un mensaje de éxito o error."""
-    connection = conectarBase()
-    if connection is None:
-        print("No se pudo establecer la conexión a la base de datos.")
-        return "No se pudo establecer la conexión a la base de datos."
-    
-    try:
-        # Ejecuta la consulta de actualización
-        with connection.begin():  # Asegura una transacción
-            connection.execute(text(query))  # Envolver en 'text'
-        msj = "Actualización exitosa."
-        return 1, msj
-
-    except Exception as e:
-        print("Error al ejecutar la actualización:", e)
-        msj = f"Error al ejecutar la actualización: {e}"
-        return 0, msj
-
-    finally:
-        # Cierra la conexión si fue establecida
-        cerrarConexion(connection)
-
-# Hacer una consulta de datos
-#def consultar(query):
-    """Ejecuta una consulta en la base de datos y devuelve los resultados en un DataFrame."""
-    connection = conectarBase()
-    if connection is None:
-        print("No se pudo establecer la conexión a la base de datos.")
-        return "No se pudo establecer la conexión a la base de datos."
-
-    try:
-        # Ejecutar la consulta y obtener los resultados en un DataFrame usando pandas y SQLAlchemy
-        df = pd.read_sql(query, connection)
-        return df
-
-    except Exception as e:
-        print("Error al ejecutar la consulta:", e)
-        msj = f"Error al ejecutar la consulta: {e}"
-        return msj
-
-    finally:
-        # Cerrar la conexión
-        cerrarConexion(connection)
-
-# Realizar una inserción
-#def insertar(query):
-    """Inserta datos en la base de datos y devuelve un mensaje de éxito o error."""
-    connection = conectarBase()
-    if connection is None:
-        print("No se pudo establecer la conexión a la base de datos.")
-        return "No se pudo establecer la conexión a la base de datos."
-    
-    try:
-        # Ejecuta la consulta de inserción
-        with connection.begin():  # Asegura una transacción
-            connection.execute(text(query))  # Envolver la consulta en 'text'
-        msj = "Inserción exitosa."
-        return msj
-
-    except Exception as e:
-        print("Error al ejecutar la inserción:", e)
-        msj = f"Error al ejecutar la inserción: {e}"
-        return msj
-
-    finally:
-        # Cierra la conexión si fue establecida
-        cerrarConexion(connection)
 
 ############################################################### Cliente ###############################################################
 # Listo
@@ -255,8 +185,8 @@ def eliminar_cliente(id_client_selected):
     finally:
         cerrarConexion(connection)
 
-def consultar_dispo_clientes(type):
-    """Ejecuta una consulta en la base de datos y devuelve todos los clientes que estan disponibles."""
+def consultar_dispo_miembros(type):
+    """Ejecuta una consulta en la base de datos y devuelve todos los miembros que estan disponibles."""
     connection = conectarBase()
     if connection is None:
         print("No se pudo establecer la conexión a la base de datos.")
@@ -267,7 +197,7 @@ def consultar_dispo_clientes(type):
             df = pd.read_sql("SELECT idMiembro as id, nombre FROM miembro WHERE disponibilidad='Disponible';", connection)
             return df
         elif type==1:
-            df = pd.read_sql("SELECT idMiembro as id, count(*) as no_actividades FROM actividad GROUP BY idMiembro;", connection)
+            df = pd.read_sql("SELECT idMiembro as id, count(*) as no_actividades FROM actividad GROUP BY idMiembro ORDER BY no_actividades ASC;", connection)
             return df
 
     except Exception as e:
@@ -1455,7 +1385,6 @@ def insertar_factura(name_ins_bill, dateemission_ins_bill, cost_ins_bill, type_i
     try:
         # Inicia la transacción
         with connection.begin():  # Transacción
-            # Consulta para insertar la factura
             query = text("""
                 INSERT INTO factura (
                     nombre, fecha_emision, costo, tipo, impuesto, estatus, 

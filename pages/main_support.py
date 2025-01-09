@@ -79,6 +79,7 @@ with tab_ins_support:
             address_ins_support = st.text_input("Dirección*: ", placeholder="Calle Siempre Viva 62 Col. El Temazcal")
             status_ins_support = "Libre"
             comments_ins_support = st.text_area("Notas Adicionales: ", placeholder="Agrega tus comentarios")
+            disponibility_ins_support = "Disponible"
             
             # Indicador de campos obligatorios
             st.markdown("*Campos Obligatorios")
@@ -94,11 +95,6 @@ with tab_ins_support:
                     st.error("Miembro de Soporte No Agregado")
                     st.info("Llene todos los campos obligatorios")
                 else:
-                    if status_ins_support in ["Vacaciones", "En Actividad", "Incapacidad"]:
-                        disponibility_ins_support = "No Disponible"
-                    else: 
-                        disponibility_ins_support = "Disponible"
-                    
                     state_ins_support, msj_ins_support = bd.insertar_miembro(name_ins_support, phone_ins_support, email_ins_support, address_ins_support, disponibility_ins_support, status_ins_support, comments_ins_support)
                     if state_ins_support:
                         st.success(msj_ins_support)

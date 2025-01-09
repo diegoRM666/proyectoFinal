@@ -79,16 +79,16 @@ with tab_lst_activity:
                 
                 with st.container(border=True):
                     st.markdown(f"## 💼 #{activity['idActividad']} - {activity['nombre_a']}")
-                    st.markdown(f"🔠 {activity['descripcion_a']}")
+                    st.markdown(f"🔠 Descripción: {activity['descripcion_a']}")
                     st.markdown(f'''📆 Periodo: :green[{activity['fecha_inicio_a']}] - :red[{activity['fecha_fin_a']}]''')
                     st.markdown(f"⚙️ Acciones Realizadas: {activity['acciones_realizadas_a']}")
                     st.markdown(f"#️⃣ Tipo: {activity['tipo_a']}")
-                    st.markdown(f"### 🏢 #{activity['idCliente']} - {activity['nombre_c']}")
-                    st.markdown(f"☎️ {activity['telefono_c']}")
-                    st.markdown(f"📧 {activity['email_c']}")
-                    st.markdown(f"### 👤 #{activity['idMiembro']} - {activity['nombre_m']}")
-                    st.markdown(f"☎️ {activity['telefono_m']}")
-                    st.markdown(f"📧 {activity['email_m']}")
+                    st.markdown(f"### 🏢 Cliente: #{activity['idCliente']} - {activity['nombre_c']}")
+                    st.markdown(f"☎️ Telefono: {activity['telefono_c']}")
+                    st.markdown(f"📧 Correo: {activity['email_c']}")
+                    st.markdown(f"### 👤 Miembro: #{activity['idMiembro']} - {activity['nombre_m']}")
+                    st.markdown(f"☎️ Telefono: {activity['telefono_m']}")
+                    st.markdown(f"📧 Correo: {activity['email_m']}")
 
                     
         else:
@@ -125,7 +125,7 @@ with tab_lst_activity:
                         
                         if activity['estado'] in ["Abierto"]:
                             st.markdown(f'''### 🔴 :red[{activity['estado']}]''')
-                        elif activity['estado'] in ["En Curso", "Pendiente", "Escalada Con Fabricante" ]:
+                        elif activity['estado'] in ["En Curso", "Pendiente"]:
                             st.markdown(f'''### 🟡 :orange[{activity['estado']}]''')
                         else: 
                             st.markdown(f'''### 🟢 :green[{activity['estado']}]''')
@@ -150,16 +150,16 @@ with tab_lst_activity:
                 
                 with st.container(border=True):
                     st.markdown(f"## 💼 #{activity['idActividad']} - {activity['nombre_a']}")
-                    st.markdown(f"🔠 {activity['descripcion_a']}")
+                    st.markdown(f"🔠 Descripción: {activity['descripcion_a']}")
                     st.markdown(f'''📆 Periodo: :green[{activity['fecha_inicio_a']}] - :red[{activity['fecha_fin_a']}]''')
                     st.markdown(f"⚙️ Acciones Realizadas: {activity['acciones_realizadas_a']}")
                     st.markdown(f"#️⃣ Tipo: {activity['tipo_a']}")
-                    st.markdown(f"### 🏢 #{activity['idCliente']} - {activity['nombre_c']}")
-                    st.markdown(f"☎️ {activity['telefono_c']}")
-                    st.markdown(f"📧 {activity['email_c']}")
-                    st.markdown(f"### 👤 #{activity['idMiembro']} - {activity['nombre_m']}")
-                    st.markdown(f"☎️ {activity['telefono_m']}")
-                    st.markdown(f"📧 {activity['email_m']}")
+                    st.markdown(f"### 🏢 Cliente: #{activity['idCliente']} - {activity['nombre_c']}")
+                    st.markdown(f"☎️ Telefono: {activity['telefono_c']}")
+                    st.markdown(f"📧 Correo: {activity['email_c']}")
+                    st.markdown(f"### 👤 Miembro: #{activity['idMiembro']} - {activity['nombre_m']}")
+                    st.markdown(f"☎️ Telefono: {activity['telefono_m']}")
+                    st.markdown(f"📧 Correo: {activity['email_m']}")
 
                     
         else:
@@ -188,15 +188,15 @@ with tab_ins_activity:
                 state_ins_activity = "Abierto"
 
             # Esta parte asigna de manera automatica. 
-            supports_available_activity = bd.consultar_dispo_clientes(0)
+            supports_available_activity = bd.consultar_dispo_miembros(0)
             if supports_available_activity is not None and not supports_available_activity.empty: 
                 support_ins_activity = random.choice(supports_available_activity['id'].tolist())
                 support_random_selected = supports_available_activity[supports_available_activity['id'] == support_ins_activity ]
             else:
                 st.warning("No hay Miembros Disponibles. Se asignará al Miembro con menos actividades")
-                occupability_support = bd.consultar_dispo_clientes(1)
+                occupability_support = bd.consultar_dispo_miembros(1)
                 if occupability_support is not None and not occupability_support.empty:
-                    support_ins_activity = random.choice(occupability_support['id'].tolist())
+                    support_ins_activity = occupability_support.iloc[0]['id']
                     support_random_selected = occupability_support[occupability_support['id'] == support_ins_activity]
 
 

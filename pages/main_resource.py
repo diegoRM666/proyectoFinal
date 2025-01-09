@@ -76,7 +76,6 @@ with tab_lst_resource:
         st.info("No tienes permisos para realizar esta acción, Contacta al administrador")
 
 with tab_asign_resource: 
-
     if any(role in ["admin"] for role in st.session_state["roles"]):
         resources_to_asign = bd.consultar_recursos_disponible()
         activities_to_assign = bd.consultar_actividades()

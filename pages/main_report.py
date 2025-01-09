@@ -134,7 +134,6 @@ if activities_closed is not None  and activities_open is not None:
     image_files.append((tab_file1, "Tabla Actividades Abiertas"))
     image_files.append((tab_file2, "Tabla Actividades Cerradas"))
 
-
 # Gráficas: Facturación
 state_bill, activities_bill, client_bill = bd.obtener_metricas_facturacion_report(start_date, end_date)
 if state_bill:
