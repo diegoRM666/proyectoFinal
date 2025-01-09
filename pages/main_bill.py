@@ -321,20 +321,24 @@ with tab_del_bill:
                     
                     
             with col2:
-                    if st.button("Cerrar Factura", use_container_width=True):
-                        datemodified_del_bill = ut.get_today_date()
-                        modifyby_del_bill = st.session_state['name']
+                    with st.popover(f"Cerrar Factura", use_container_width=True):
+                        st.write(f"¿Seguro que quieres cerrar la Factura?")
+                        if st.button("Si. Estoy Seguro"):
+                            # Generados automaticamente
+                            datemodified_del_bill = ut.get_today_date()
+                            modifyby_del_bill = st.session_state['name']
 
-                        # La parte interesante surge aquí. 
-                        state_del_bill, msj_del_bill = bd.cerrar_factura(id_bill_selected_delete, datemodified_del_bill, modifyby_del_bill)
-                        if state_del_bill:
-                            st.success(msj_del_bill)
-                            st.info(f"{bill_data_delete['nombre'].iloc[0]}")
-                        else: 
-                            st.error("Factura No Eliminada")
-                            st.info(msj_del_bill)
-                        time.sleep(3)
-                        message_container.empty()
-                        st.rerun()
+                            state_del_bill, msj_del_bill = bd.cerrar_factura(id_bill_selected_delete, datemodified_del_bill, modifyby_del_bill)
+                            
+                            if state_del_bill:
+                                st.success(msj_del_bill)
+                                st.info(f"{bill_data_delete['nombre'].iloc[0]}")
+                            else: 
+                                st.error("Factura No Cerrada")
+                                st.info(msj_del_bill)
+                            
+                            message_container.empty()
+                            time.sleep(3)
+                            st.rerun()
     else: 
         st.info("No tienes permisos para realizar esta accion. Contacta al administrador")

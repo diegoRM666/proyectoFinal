@@ -373,8 +373,8 @@ with tab_del_activity:
                 st.markdown(f"🏢 Cliente: #{activity_data_delete["idCliente"].iloc[0]} - {activity_data_delete["nombre_c"].iloc[0]}")
                 st.markdown(f"👤 Miembro: #{activity_data_delete["idMiembro"].iloc[0]} - {activity_data_delete["nombre_m"].iloc[0]}")
 
-            with st.popover(f"Eliminar", use_container_width=True):
-                    st.write(f"¿Seguro que quieres eliminar a {activity_data_delete["nombre"].iloc[0]}?")
+            with st.popover(f"Cerrar", use_container_width=True):
+                    st.write(f"¿Seguro que quieres cerrar a {activity_data_delete["nombre"].iloc[0]}?")
                     if st.button("Si. Estoy Seguro"):
                         # Generados automaticamente
                         date_today = datetime.now()
