@@ -368,7 +368,7 @@ def consultar_recursos_disponible():
         # Asegurar que la conexión se cierre después de la operación
         cerrarConexion(connection)
 
-def recursos_asignados_a_actisvidad(id_activity):
+def recursos_asignados_a_actividad(id_activity):
     """
     Obtiene los recursos asignados a una actividad desde la base de datos.
 

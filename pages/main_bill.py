@@ -207,6 +207,8 @@ with tab_metric_bill:
 
 # Pestaña de inserción de Facturas
 with tab_ins_bill:
+    # En caso de que no tengamos nada en el sistema
+    id_support_ins=0
     # Validamos si el usuario tiene un rol asignado, en este casos ambos
     if any(role in ["admin", "user"] for role in st.session_state["roles"]):
         # Validamos si es un admin

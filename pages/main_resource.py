@@ -547,12 +547,8 @@ with tab_new_resource:
                         st.rerun()
         # En caso de que el resultado sea vacio, puede ser porque no encontro ninguna peticion o porque no se encontro el id de miembro
         else:
-            # Si no tiene ninguna peticion
-            if state_id_email:
-                st.warning("No hay datos para mostrar")
-            # Si no tiene miembro asociado al usuario
-            else: 
-                st.warning("El usuario con el que iniciaste sesion no tiene un miembro asociado. Contacte con Soporte")
+            st.warning("No hay datos para mostrar")
+
     # En caso de no tener permisos. Para roles futuros
     else:
         st.info("No tienes permisos para realizar esta acción, Contacta con Soporte")
