@@ -209,7 +209,6 @@ with tab_metric_bill:
 with tab_ins_bill:
     # Validamos si el usuario tiene un rol asignado, en este casos ambos
     if any(role in ["admin", "user"] for role in st.session_state["roles"]):
-        
         # Validamos si es un admin
         if any(role in ["admin"] for role in st.session_state["roles"]):
             # Realizamos una consulta para obtener los miembros que tenemos en el sistema.
@@ -286,12 +285,7 @@ with tab_ins_bill:
                     # Recarga la pagina
                     st.rerun()
         else:
-            # Si esta vacia la consulta de actividades y ademas no se encontro con el email 
-            if state_ins_mail:
-                st.warning("No hay activiades abiertas")
-            # Si esta vacia la consulta de actividades, pero si se encontro con el email
-            else: 
-                st.warning("No estas dado de alta en la base de datos. Contacta a Soporte.")
+            st.warning("No hay activiades abiertas")
     # En caso de no tener el rol de admin, se le informa al usuario.
     else: 
         st.info("No tienes permisos para realizar esta accion. Contacta al administrador")
@@ -372,6 +366,8 @@ with tab_upd_bill:
                 time.sleep(3)
                 message_container.empty()
                 st.rerun()
+        else: 
+            st.warning("No hay facturas")
     # En caso de no tener el rol admin, se le hara saber al usuario.
     else: 
         st.info("No tienes permisos para realizar esta accion. Contacta al administrador")

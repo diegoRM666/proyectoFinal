@@ -103,7 +103,7 @@ with tab_asign_resource:
             id_activity_selected = int(activity_selected.split(' - ')[0][1:])
 
             # Funcion que consulta las recursos asignados a la actividad que seleccionamos
-            resources_asigned_to_activity = bd.recursos_asginados_a_actividad(id_activity_selected)
+            resources_asigned_to_activity = bd.recursos_asignados_a_actividad(id_activity_selected)
             st.markdown("### Asignados a la actividad:")
 
             # Verificar si hay recursos asignados a la actividad
