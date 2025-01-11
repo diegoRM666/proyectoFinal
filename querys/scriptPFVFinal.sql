@@ -236,7 +236,6 @@ CREATE TABLE IF NOT EXISTS `erp`.`peticion_nuevo_recurso` (
   `descripcion` VARCHAR(400) NULL DEFAULT NULL,
   `fecha_peticion` DATE NULL DEFAULT NULL,
   `cantidad` INT NULL DEFAULT NULL,
-  `estado_peticion` VARCHAR(200) NULL DEFAULT NULL,
   `notas` LONGTEXT NULL DEFAULT NULL,
   `idMiembro` INT NOT NULL,
   PRIMARY KEY (`idNuevoRecurso`),
