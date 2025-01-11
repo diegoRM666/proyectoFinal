@@ -73,7 +73,7 @@ def deploy_information():
             try:
                 (email_of_registered_user,
                     username_of_registered_user,
-                 name_of_registered_user) = authenticator.register_user(roles=['user'], fields ={'Form name':'Crear Nuevo Usuario', 'First name':'Nombre', 'Last name': 'Primer Apellido', 'Username': 'Nombre de Usuario', 'Password': 'Contraseña', 'Repeat password': 'Repite Contraseña', 'Password Hint':'Sugerencia','Register': 'Registrar'})
+                 name_of_registered_user) = authenticator.register_user(clear_on_submit=True, roles=['user'], fields ={'Form name':'Crear Nuevo Usuario', 'First name':'Nombre', 'Last name': 'Primer Apellido', 'Username': 'Nombre de Usuario', 'Password': 'Contraseña', 'Repeat password': 'Repite Contraseña', 'Password Hint':'Sugerencia','Register': 'Registrar'})
                 if email_of_registered_user:
                     save_file_yaml()
                     st.success('Usuario Registrado Correctamente')

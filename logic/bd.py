@@ -13,12 +13,14 @@ def conectarBase():
     s_o = platform.system()
     try:
         if s_o == "Darwin":
+            user='root'
             password = '15122121B'
         else:
+            user='admin'
             password = 'password'
         
         # Crear la URL de conexión de SQLAlchemy
-        db_url = f"mysql+pymysql://root:{password}@localhost/erp"
+        db_url = f"mysql+pymysql://{user}:{password}@localhost/erp"
         
         # Crear el motor de conexión con SQLAlchemy
         engine = create_engine(db_url)
@@ -404,7 +406,7 @@ def insertar_recurso(serial, name, description, category, life, comments, type):
         cerrarConexion(connection)
 
 def actualizar_recurso(name, type, description, category, serial_number, life, state, comments, id_resource_selected):
-    """Actualiza un recurso en la base de datos dentro de una transacción."""
+    """Actualiza un recurso en la base de datos y elimina asociaciones de actividades dentro de una transacción."""
     connection = conectarBase()
     if connection is None:
         print("No se pudo establecer la conexión a la base de datos.")
@@ -413,7 +415,8 @@ def actualizar_recurso(name, type, description, category, serial_number, life, s
     try:
         # Iniciar transacción
         with connection.begin() as transaction:
-            query = text("""
+            # Consulta para actualizar el recurso
+            update_query = text("""
                 UPDATE recurso 
                 SET nombre = :name, 
                     tipo = :type, 
@@ -425,8 +428,7 @@ def actualizar_recurso(name, type, description, category, serial_number, life, s
                     notas = :comments 
                 WHERE idRecurso = :id_resource_selected;
             """)
-
-            connection.execute(query, {
+            connection.execute(update_query, {
                 "name": name,
                 "type": type,
                 "description": description,
@@ -438,12 +440,19 @@ def actualizar_recurso(name, type, description, category, serial_number, life, s
                 "id_resource_selected": id_resource_selected,
             })
 
-        msj = "Actualización exitosa."
+            # Consulta para eliminar asociaciones de actividades
+            delete_query = text("""
+                DELETE FROM actividad_has_recurso 
+                WHERE idRecurso = :id_resource;
+            """)
+            connection.execute(delete_query, {"id_resource": id_resource_selected})
+
+        msj = "Actualización y eliminación exitosas."
         return True, msj
 
     except Exception as e:
-        print("Error al ejecutar la actualización:", e)
-        msj = f"Error al ejecutar la actualización: {e}"
+        print("Error al ejecutar la operación:", e)
+        msj = f"Error al ejecutar la operación: {e}"
         return False, msj
 
     finally:
@@ -530,7 +539,7 @@ def consultar_peticiones_por_id(id_miembro):
         # Cerrar la conexión
         cerrarConexion(connection)
 
-def insertar_peticion_nuevo_recurso(name_new_resource, type_new_resource, description_new_resource, date_new_resource, quantity_new_resource, state_new_resource, comments_ins_resource, id_support_ins):
+def insertar_peticion_nuevo_recurso(name_new_resource, type_new_resource, description_new_resource, date_new_resource, quantity_new_resource, comments_ins_resource, id_support_ins):
     """
     Inserta una nueva petición de recurso en la base de datos utilizando una transacción.
     """
@@ -544,8 +553,8 @@ def insertar_peticion_nuevo_recurso(name_new_resource, type_new_resource, descri
         with connection.begin() as transaction:
             query = text("""
                 INSERT INTO peticion_nuevo_recurso 
-                (nombre, tipo, descripcion, fecha_peticion, cantidad, estado_peticion, notas, idMiembro) 
-                VALUES (:name, :type, :description, :date, :quantity, :state, :comments, :id_member);
+                (nombre, tipo, descripcion, fecha_peticion, cantidad, notas, idMiembro) 
+                VALUES (:name, :type, :description, :date, :quantity, :comments, :id_member);
             """)
 
             connection.execute(query, {
@@ -554,7 +563,6 @@ def insertar_peticion_nuevo_recurso(name_new_resource, type_new_resource, descri
                 "description": description_new_resource,
                 "date": date_new_resource,
                 "quantity": quantity_new_resource,
-                "state": state_new_resource,
                 "comments": comments_ins_resource,
                 "id_member": id_support_ins,
             })
@@ -980,7 +988,7 @@ def consultar_miembros(type):
         cerrarConexion(connection)
 
 def consultar_id_email(email):
-    """Devuelve el ID del miembro de acuerdo al email, o None si no se encuentra."""
+    """Devuelve el ID del miembro de acuerdo al email, o un mensaje si no se encuentra."""
     connection = conectarBase()
     if connection is None:
         print("No se pudo establecer la conexión a la base de datos.")
