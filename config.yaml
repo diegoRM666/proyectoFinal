@@ -12,33 +12,6 @@ credentials:
       password: $2b$12$oonB2p76NDK7zXuJNdJ7mOTRbMJ2yEE1l3p.emt98dG4TCIBmcYm.
       roles:
       - admin
-    gracielamora:
-      email: graciela.mora@apptec.com.mx
-      first_name: Graciela
-      last_name: Mora
-      logged_in: false
-      password: $2b$12$tWEX8mFotugu3RHyN6dEDe3goc2n3Gb8ckQmQTVlydS5VpbYgrXbm
-      password_hint: Provista
-      roles:
-      - user
-    leodaniel:
-      email: leo@apptec.com.mx
-      first_name: Leonardo
-      last_name: Daniel
-      logged_in: false
-      password: $2b$12$MgyjYqPmFWatwpr7jEtN7uSTITIIERJ6hob3dSok4cUu3O2AelHcW
-      password_hint: Provista
-      roles:
-      - user
-    santiagotovar:
-      email: santiago.tovar@apptec.com.mx
-      first_name: Santiago
-      last_name: Tovar
-      logged_in: false
-      password: $2b$12$4Vbq9jzVIaKdbxEHSpAf.OyKShQqdKi/5QZRvGq7Z5cpBiRe19EJa
-      password_hint: Provided
-      roles:
-      - user
     victorreyes:
       email: victor.reyes@apptec.com.mx
       first_name: Victor
