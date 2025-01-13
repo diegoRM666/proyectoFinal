@@ -127,7 +127,7 @@ with tab_lst_bill:
                         st.markdown(f"📅 Ultima Modificación: {bill['fecha_modificacion']}")
                         st.markdown(f"👤 Modificado Por: {bill['modificado_por']}")
                         st.write(f"💼 Actividad: #{bill['idActividad']}-{bill['nombre_a']}")
-                    st.write(f"👤 Miembro: #{bill['idM']}-{bill['nombre_m']}")         
+                        st.write(f"👤 Miembro: #{bill['idM']}-{bill['nombre_m']}")         
         else:
             # En caso de que no hay datos, lo informa
             st.warning("No existen datos")
@@ -327,7 +327,7 @@ with tab_upd_bill:
                 cost_upd_bill = st.text_input("Costo*: ", value=f"{bill_data['costo'].iloc[0]}")
                 type_upd_bill = st.selectbox("Tipo: ",["Viaje", "Comida", "Hospedaje"], index = index_type)
                 tax_upd_bill = st.text_input("Impuesto*: ", value=f"{bill_data['impuesto'].iloc[0]}")
-                status_upd_bill = st.selectbox("Estatus: ", ["Abierta", "Pendiente"], index=index_status)
+                status_upd_bill = st.selectbox("Estatus: ", ["Abierta", "En Proceso"], index=index_status)
                 support_upd_bill = st.selectbox("Miembro: ", combined_supports)
                 activity_upd_bill = st.selectbox("Actvidad: ", combined_activities)
 
@@ -414,14 +414,6 @@ with tab_del_bill:
                     # Se conjuntan el id con el nombre de la actividad y del miembro de soporte
                     st.write(f"💼 Actividad: #{bill_data_delete['idA'].iloc[0]}-{bill_data_delete['nombre_a'].iloc[0]}")
                     st.write(f"👤 Miembro: #{bill_data_delete['idM'].iloc[0]}-{bill_data_delete['nombre_m'].iloc[0]}")
-                    
-                    # Permite cambiar los colores del texto y ademas proporciona un emoji para distintos estados de la actividad
-                    if bill_data_delete['estatus'].iloc[0] == "Abierta":
-                        st.markdown(f'''### 🔴 :red[{bill_data_delete['estatus'].iloc[0]}]''')
-                    elif bill_data_delete['estatus'].iloc[0] == "En Proceso":
-                        st.markdown(f'''### 🟡 :yellow[{bill_data_delete['estatus'].iloc[0]}]''')
-                    else:
-                        st.markdown(f'''### 🟢 :green[{bill_data_delete['estatus'].iloc[0]}]''')
                     
                     
             with col2:

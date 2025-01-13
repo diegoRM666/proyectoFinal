@@ -135,7 +135,7 @@ def dict_bill_upd(type, status):
 
     status_dict = {
         "Abierta": 0,
-        "Pendiente": 1
+        "En Proceso": 1
     }
 
     index_type = type_dict[type]

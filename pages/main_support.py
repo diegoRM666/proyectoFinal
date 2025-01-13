@@ -15,7 +15,7 @@ st.markdown("# 👤 Miembros")
 
 # Mostrar las disintas actividades a realizar
 tab_lst_support, tab_ins_support, tab_upd_support, tab_del_support = \
-      st.tabs(["Listar Miembro","Agregar Miembro", "Actualizar Miembro", "Eliminar Miembro"])
+      st.tabs(["Listar Miembros","Agregar Miembro", "Actualizar Miembro", "Eliminar Miembro"])
 
 # Pestaña para listar los miembros de soporte
 with tab_lst_support:

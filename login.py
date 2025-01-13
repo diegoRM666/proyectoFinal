@@ -12,7 +12,6 @@ from streamlit_authenticator.utilities import (CredentialsError,
                                                ResetError,
                                                UpdateError)
 
-
 # Importa la función del menú para gestionar la navegación
 from menu import menu
 
@@ -36,7 +35,7 @@ def deploy_information():
     - Para roles "admin" o "super-admin": permite ver información, actualizar contraseñas y crear nuevos usuarios.
     - Para otros roles: permite ver información y actualizar contraseñas.
     """
-    if any(role in ["admin", "super-admin"] for role in st.session_state["roles"]):
+    if any(role in ["admin"] for role in st.session_state["roles"]):
         st.markdown("# ℹ️ Cuenta")
         tab_info_session, tab_update_session, tab_create_new = st.tabs(["Información", "Actualizar", "Crear Nuevo Usuario"])
 
