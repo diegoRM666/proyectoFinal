@@ -238,7 +238,7 @@ with tab_ins_bill:
             # Combinacion de columnas de identificador y nombre de actividad
             combined_activities = [f"#{row['idActividad']} - {row['nombre']}" for index, row in activities_ins_bills.iterrows()]    
             # Despliegue para seleccionar la actividad a la que queremos asociar la factura.
-            activity_ins_bill = st.selectbox("Actvidad: ", combined_activities)
+            activity_ins_bill = st.selectbox("Actvidad: ", combined_activities, key='sbinsbill')
             # Obtencion del id de la actividad
             id_activity_ins = int (activity_ins_bill.split(' - ')[0][1:])
         
@@ -277,7 +277,7 @@ with tab_ins_bill:
                         if state_insert_bill:
                             st.success(msj_insert_bill)
                             # Información de la factura insertada
-                            st.info(f"{name_ins_bill} -- {dateemission_ins_bill} -- {cost_ins_bill} -- {type_ins_bill} -- Abierta -- {createby_ins_bill} -- {activities_ins_bills} -- {id_support_ins}")
+                            st.info(f"{name_ins_bill} -- {dateemission_ins_bill} -- {cost_ins_bill} -- {type_ins_bill} -- Abierta -- {createby_ins_bill} -- Actividad #{id_activity_ins} -- Miembro #{id_support_ins}")
                         else:
                             # En caso de fallar, despliega el mensaje de la inserción fallida
                             st.error(msj_insert_bill)
@@ -298,6 +298,13 @@ with tab_upd_bill:
     if any(role in ["admin"] for role in st.session_state["roles"]):
         # Consulta las facturas que se pueden actualizar
         bills_available = bd.consultar_factura_actualizar()
+
+        # Consulta que trae las actividades con el id de miembro
+        activities_ins_bills = bd.consultar_actividades()
+        # Validación donde identifica si el resultado tiene filas
+        if activities_ins_bills is not None and not activities_ins_bills.empty:
+            # Combinacion de columnas de identificador y nombre de actividad
+            combined_activities = [f"#{row['idActividad']} - {row['nombre']}" for index, row in activities_ins_bills.iterrows()]
 
         # Si el resultado no es vacio
         if bills_available is not None and not bills_available.empty:
@@ -329,7 +336,7 @@ with tab_upd_bill:
                 tax_upd_bill = st.text_input("Impuesto*: ", value=f"{bill_data['impuesto'].iloc[0]}")
                 status_upd_bill = st.selectbox("Estatus: ", ["Abierta", "En Proceso"], index=index_status)
                 support_upd_bill = st.selectbox("Miembro: ", combined_supports)
-                activity_upd_bill = st.selectbox("Actvidad: ", combined_activities)
+                activity_upd_bill = st.selectbox("Actvidad: ", combined_activities, key='sbupdbill')
 
                 # Botón de envió de información
                 submit_upd_bill = st.form_submit_button("Actualizar", use_container_width=True)

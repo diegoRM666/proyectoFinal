@@ -53,7 +53,7 @@ def deploy_information():
             # Widget para restablecer contraseña
             if st.session_state['authentication_status']:
                 try:
-                    if authenticator.reset_password(st.session_state['username'], fields={
+                    if authenticator.reset_password(st.session_state['username'], clear_on_submit=True, fields={
                         'Form name': 'Cambiar Contraseña', 
                         'Current password': 'Contraseña Actual',
                         'New password': 'Nueva Contraseña',

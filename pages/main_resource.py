@@ -417,7 +417,7 @@ with tab_new_resource:
                         st.markdown(f"🔠 Descripción: {resource['descripcion']}")
                         st.markdown(f"📆 Recibido: {resource['fecha_peticion']}")
                         st.markdown(f"👤 Pedido Por: {resource['nombre_m']}")
-                        st.markdown(f"#️⃣ Cantidad: {resource['descripcion']}")
+                        st.markdown(f"#️⃣ Cantidad: {resource['cantidad']}")
                         if resource['notas'] !="":
                             st.markdown(f"🗒️ Notas: {resource['notas']}")
                 index += 1
